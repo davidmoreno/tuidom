@@ -1,34 +1,65 @@
 
 import sys
+from typing import Literal, Optional
+
+from attr import dataclass
 
 from tuidom import Div, Span, Style, XtermRenderer, strlist_to_str
 
 
-def Welcome():
+@dataclass
+class WelcomeProps:
+    menu: Optional[Literal["file", "edit", "tools", "exit"]] = None
+
+
+def MenuBar(props: WelcomeProps):
+    highlight = Style(
+        background="bg-primary",
+        color="text-primary"
+    )
     return Div(
         [
-            Div([
-                Span(text="Hola Mundo!"),
-            ],
-                id="holamundo",
-                style=Style(
-                borderWidth=1,
-                borderStyle="solid",
-                borderColor="white",
-                background="bg-secondary",
-                color="black",
-            )),
-            Div([
-                Span(text="Hola Mundo2!"),
-            ],
-                id="holamundo2",
-                style=Style(
-                borderWidth=1,
-                padding=1,
-                background="bg-tertiary",
-                color="black",
-            ))
+            Span("File ", style=props.menu == "file" and highlight),
+            Span("Edit ", style=props.menu == "edit" and highlight),
+            Span("Tools ", style=props.menu == "tools" and highlight),
+            Span("Exit ", style=props.menu == "exit" and highlight),
         ],
+        style=Style(
+            background="bg-secondary",
+            color="text-secondary",
+            flexDirection="row",
+            width="100%",
+        )
+    )
+
+
+def Welcome(props: WelcomeProps = WelcomeProps()):
+    return Div([
+        MenuBar(props),
+        Div([
+            Span(text="Hola Mundo!"),
+        ],
+            id="holamundo",
+            style=Style(
+            borderWidth=1,
+            borderStyle="solid",
+            borderColor="white",
+            background="bg-secondary",
+            color="text-secondary",
+            flexGrow=0,
+        )),
+        Div([
+            Span(text="Hola Mundo2!"),
+        ],
+            id="holamundo2",
+            style=Style(
+            borderWidth=1,
+            padding=1,
+            background="bg-tertiary",
+            color="text-tertiary",
+            flexGrow=0,
+        ))
+    ],
         style=Style(
             background="bg-primary",
             color="text-primary",
@@ -36,7 +67,7 @@ def Welcome():
             height="100%",
             alignItems="center",
             justifyItems="center"
-        )
+    )
     )
 
 
@@ -49,8 +80,17 @@ if __name__ == '__main__':
             renderer.calculate_layout(dom),
         )
     else:
-        print(
-            strlist_to_str(
-                renderer.render(dom))
-        )
+        renderer.render(dom)
+        input()
+        dom = Welcome(WelcomeProps(menu="edit"))
+        renderer.render(dom)
+        input()
+        dom = Welcome(WelcomeProps(menu="file"))
+        renderer.render(dom)
+        input()
+        dom = Welcome(WelcomeProps(menu="tools"))
+        renderer.render(dom)
+        input()
+        dom = Welcome(WelcomeProps(menu="exit"))
+        renderer.render(dom)
         input()
