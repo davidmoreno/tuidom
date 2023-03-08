@@ -1,8 +1,8 @@
 
 
 import logging
+import math
 import shutil
-import sys
 from dataclasses import dataclass, field
 from typing import List, Literal, Optional
 
@@ -25,6 +25,8 @@ class Style:
     borderColor: Optional[str] = None
     top: Optional[str | int] = None
     left: Optional[str | int] = None
+    flexDirection: Literal["row", "column"] = "column"
+    flexGrow: int = 1
 
 
 DEFAULT_CSS = Style(
@@ -47,6 +49,15 @@ COLORS = {
     "green": (0, 255, 0),
     "blue": (0, 0, 255),
     "white": (255, 255, 255),
+    "bg-primary": "#37E2D5",
+    "bg-secondary": "#590696",
+    "bg-tertiary": "#C70A80",
+    "bg-quaternary": "#FBCB0A",
+
+    "text-primary": "#000000",
+    "text-secondary": "#0000000",
+    "text-tertiary": "#0000000",
+    "text-quaternary": "#000000",
 }
 # COLORS = {
 #     "black": "#000000",
@@ -69,9 +80,18 @@ class Layout:
 
 
 @ dataclass
+class Constraints:
+    minWidth: int = 0
+    maxWidth: int = 1024
+    minHeight: int = 0
+    maxHeight: int = 1024
+
+
+@ dataclass
 class Element:
     children: List['Element'] = field(default_factory=list)
     style: Optional[Style] = None
+    id: Optional[str] = None
 
     # these is set by the renderer
     parent: Optional['Element'] = None
@@ -87,45 +107,9 @@ class Span(Element):
     text: str = ""
 
 
-def Welcome():
-    return Div(
-        [
-            Div([
-                Span(text="Hola Mundo!"),
-            ], style=Style(
-                borderWidth=1,
-                borderStyle="solid",
-                borderColor="white",
-                background="#AABBDD",
-                color="black",
-                width=20,
-                height=4,
-                top="20%",
-                left="50%",
-            )),
-            Div([
-                Span(text="Hola Mundo!"),
-            ], style=Style(
-                borderWidth=1,
-                borderStyle="solid",
-                borderColor="white",
-                background="#AABBDD",
-                color="black",
-            ))
-        ],
-        style=Style(
-            background="#9999EE",
-            color="white",
-            width="100%",
-            height="100%",
-            alignItems="center",
-            justifyItems="center"
-        )
-    )
-
-
 class TuiRenderer:
-    width, height = shutil.get_terminal_size()
+    width = 80
+    height = 25
 
     def get_style(self, element, name):
         ret = element.style and getattr(element.style, name)
@@ -152,28 +136,89 @@ class TuiRenderer:
         dom.layout.left = 0
         dom.layout.width = self.width
         dom.layout.height = self.height
+        self.calculate_layout_sizes(dom, Constraints(
+            0, self.width, 0, self.height,
+        ))
         return self.calculate_layout_element(dom)
+
+    def calculate_layout_sizes(self, node: Element, constraints: Constraints):
+        fixed_children = [x for x in node.children if x.style.flexGrow == 0]
+        variable_children = [x for x in node.children if x.style.flexGrow != 0]
+
+        if node.style.width:
+            tmp = self.calculate_pos(constraints.maxWidth, node.style.width)
+            constraints.maxWidth = tmp
+            constraints.minWidth = tmp
+        if node.style.height:
+            tmp = self.calculate_pos(constraints.maxHeight, node.style.height)
+            constraints.maxHeight = tmp
+            constraints.minHeight = tmp
+
+        width = 0
+        height = 0
+        if node.style.borderColor:
+            constraints.maxWidth = constraints.maxWidth-2
+            constraints.maxHeight = constraints.maxHeight-2
+            width += 2
+            height += 2
+        if node.style.padding:
+            constraints.maxWidth = constraints.maxWidth-node.style.padding
+            constraints.maxHeight = constraints.maxHeight-node.style.padding
+            width += node.style.padding
+            height += node.style.padding
+
+        if hasattr(node, "text"):
+            width = len(node.text)
+            height = math.ceil(width / constraints.maxWidth)
+            width = min(width, constraints.maxWidth)
+
+        if node.style.flexDirection == "horizontal":
+            for child in fixed_children:
+                self.calculate_layout_sizes(child, constraints)
+                width += child.width
+                height = max(height, child.height)
+                constraints.maxWidth = constraints.maxWidth-child.width
+                constraints.minHeight = height
+
+            if variable_children:
+                quants = sum(x.style.flexGrow for x in variable_children)
+                quant_size = constraints.maxWidth / quants
+                for child in variable_children:
+                    self.calculate_layout_sizes(Constraints(
+                        quant_size * child.style.flexGrow,
+                        quant_size * child.style.flexGrow,
+                        constraints.minHeight,
+                        constraints.maxHeight,
+                    ))
+                    width += child.width
+                    height = max(height, child.height)
+                    constraints.maxWidth = constraints.maxWidth-child.width
+                    constraints.minHeight = height
+
+        node.layout.width = max(
+            min(width, constraints.maxWidth), constraints.minWidth)
+        node.layout.height = max(
+            min(height, constraints.maxHeight), constraints.minHeight)
 
     def calculate_layout_element(self, parent):
         ret = [parent.layout]
+        top = parent.layout.top
+        left = parent.layout.left
         for child in parent.children:
-            print(parent.__class__.__name__, parent.layout,
-                  child.__class__.__name__, child.style)
+            # print(
+            #     parent.__class__.__name__,
+            #     "#", parent.id,
+            #     "\n  ", parent.layout,
+            #     "\n  ", child.__class__.__name__, "#", child.id,
+            #     "\n  ", child.style
+            # )
             child.parent = parent
-            child.layout.width = self.calculate_pos(
-                parent.layout.width,
-                child.style and child.style.width
-            )
-            child.layout.height = self.calculate_pos(
-                parent.layout.height,
-                child.style and child.style.height
-            )
-            child.layout.top = parent.layout.top + self.calculate_pos(
-                parent.layout.height - child.layout.height - parent.layout.top,
+            child.layout.top = top + self.calculate_pos(
+                parent.layout.height - child.layout.height - top,
                 child.style and child.style.top or 0
             )
-            child.layout.left = parent.layout.left + self.calculate_pos(
-                parent.layout.width - child.layout.width - parent.layout.left,
+            child.layout.left = left + self.calculate_pos(
+                parent.layout.width - child.layout.width - left,
                 child.style and child.style.left or 0
             )
 
@@ -187,13 +232,20 @@ class TuiRenderer:
                 *ret,
                 *self.calculate_layout_element(child),
             ]
+            top += child.layout.height
+
         return ret
 
     def rgbcolor(self, color: str):
         if color.startswith("#"):
             return f"{int(color[1:3], 16)};{int(color[3:5], 16)};{int(color[5:7], 16)}"
         if color in COLORS:
-            return ';'.join(map(str, COLORS[color]))
+            color = COLORS[color]
+            if isinstance(color, tuple):
+                return ';'.join(map(str, color))
+            if color.startswith("#"):
+                return f"{int(color[1:3], 16)};{int(color[3:5], 16)};{int(color[5:7], 16)}"
+
         return ';'.join(map(str, COLORS["black"]))
 
     def render(self, dom):
@@ -201,6 +253,11 @@ class TuiRenderer:
 
 
 class XtermRenderer(TuiRenderer):
+    def __init__(self):
+        width, height = shutil.get_terminal_size()
+        self.width = width
+        self.height = height - 1
+
     def render(self, dom: Element):
         self.calculate_layout(dom)
 
@@ -286,20 +343,5 @@ def strlist_to_str(strl):
         return strl
     return ''.join(strlist_to_str(x) for x in strl)
 
-
-if __name__ == '__main__':
-    dom = Welcome()
-    renderer = XtermRenderer()
-    if sys.argv[1:] == ["layout"]:
-        import json
-        print(
-            renderer.calculate_layout(dom),
-        )
-    else:
-        print(
-            strlist_to_str(
-                renderer.render(dom))
-        )
-        input()
 
 # https://www.xfree86.org/current/ctlseqs.html
