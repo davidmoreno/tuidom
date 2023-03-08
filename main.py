@@ -41,9 +41,7 @@ def Welcome(props: WelcomeProps = WelcomeProps()):
         ],
             id="holamundo",
             style=Style(
-            borderWidth=1,
-            borderStyle="solid",
-            borderColor="white",
+            borderStyle="double",
             background="bg-secondary",
             color="text-secondary",
             flexGrow=0,
@@ -53,7 +51,6 @@ def Welcome(props: WelcomeProps = WelcomeProps()):
         ],
             id="holamundo2",
             style=Style(
-            borderWidth=1,
             padding=1,
             background="bg-tertiary",
             color="text-tertiary",

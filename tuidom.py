@@ -21,8 +21,7 @@ class Style:
     alignItems: Optional[Literal["top", "center", "bottom"]] = None
     justifyItems: Optional[Literal[
         "left", "center", "right", "justify"]] = None
-    borderWidth: Optional[int] = None
-    borderStyle: Optional[str] = None
+    borderStyle: Optional[Literal["single", "double"]] = None
     borderColor: Optional[str] = None
     top: Optional[str | int] = None
     left: Optional[str | int] = None
@@ -33,7 +32,6 @@ class Style:
 DEFAULT_CSS = Style(
     color="black",
     background="green",
-    borderWidth=0,
     padding=0,
     scroll="auto",
     width="auto",
@@ -205,7 +203,7 @@ class TuiRenderer:
             height = math.ceil(width / constraints.maxWidth)
             width = min(width, constraints.maxWidth)
 
-        if node.style.borderColor:
+        if node.style.borderStyle:
             constraints.maxWidth = constraints.maxWidth-2
             constraints.maxHeight = constraints.maxHeight-2
 
@@ -270,7 +268,7 @@ class TuiRenderer:
                     constraints.minWidth = max(constraints.minWidth, width)
                     print("width", width)
 
-        if node.style.borderColor:
+        if node.style.borderStyle:
             width += 2
             height += 2
 
@@ -309,7 +307,7 @@ class TuiRenderer:
                 child.style and child.style.left or 0
             )
 
-            if node.style and node.style.borderColor:
+            if node.style and node.style.borderStyle:
                 child.layout.top += 1
                 child.layout.left += 1
                 child.layout.width -= 2
@@ -398,10 +396,13 @@ class XtermRenderer(TuiRenderer):
         color = self.rgbcolor(self.get_style(dom, "color"))
         layout = dom.layout
 
-        if dom.style and dom.style.borderColor:
-            table_chars = "╔╗╚╝═║"
-        else:
-            table_chars = None
+        table_chars = None
+        if dom.style and dom.style.borderStyle:
+            style = dom.style.borderStyle
+            if style == "single":
+                table_chars = "┌┐└┘─│"
+            elif style == "double":
+                table_chars = "╔╗╚╝═║"
 
         ret = [
             # "\033[38;5;",
@@ -411,7 +412,7 @@ class XtermRenderer(TuiRenderer):
         ]
 
         if isinstance(dom, Span):
-            if dom.style and dom.style.borderColor:
+            if dom.style and dom.style.borderStyle:
                 ret.append([
                     f"\033[{layout.top + 1};{layout.left + 2}H",  # position
                     dom.text,
