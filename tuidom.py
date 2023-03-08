@@ -50,13 +50,13 @@ COLORS = {
     "green": (0, 255, 0),
     "blue": (0, 0, 255),
     "white": (255, 255, 255),
-    "bg-primary": "#37E2D5",
-    "bg-secondary": "#590696",
+    "bg-primary": "#590696",
+    "bg-secondary": "#37E2D5",
     "bg-tertiary": "#C70A80",
     "bg-quaternary": "#FBCB0A",
 
-    "text-primary": "#000000",
-    "text-secondary": "#ffffff",
+    "text-primary": "#ffffff",
+    "text-secondary": "#000000",
     "text-tertiary": "#ffffff",
     "text-quaternary": "#000000",
 }

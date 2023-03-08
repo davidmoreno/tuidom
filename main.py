@@ -14,8 +14,8 @@ class WelcomeProps:
 
 def MenuBar(props: WelcomeProps):
     highlight = Style(
-        background="bg-primary",
-        color="text-primary"
+        background="bg-tertiary",
+        color="text-tertiary"
     )
     return Div(
         [
@@ -58,7 +58,8 @@ def Welcome(props: WelcomeProps = WelcomeProps()):
             background="bg-tertiary",
             color="text-tertiary",
             flexGrow=0,
-        ))
+        )),
+        Span("Adios"),
     ],
         style=Style(
             background="bg-primary",
@@ -67,7 +68,7 @@ def Welcome(props: WelcomeProps = WelcomeProps()):
             height="100%",
             alignItems="center",
             justifyItems="center"
-    )
+    ),
     )
 
 
