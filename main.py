@@ -1,7 +1,7 @@
 
 import sys
 
-from test import Div, Span, Style, XtermRenderer, strlist_to_str
+from tuidom import Div, Span, Style, XtermRenderer, strlist_to_str
 
 
 def Welcome():
