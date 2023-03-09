@@ -392,7 +392,7 @@ class XtermRenderer(TuiRenderer):
     def __init__(self):
         width, height = shutil.get_terminal_size()
         self.width = width
-        self.height = height - 1
+        self.height = height
 
         fd = sys.stdin.fileno()
         self.oldtermios = termios.tcgetattr(fd)
@@ -423,8 +423,11 @@ class XtermRenderer(TuiRenderer):
         # ret.append(
         #     f"\033[{self.width};{self.height}H",  # position
         # )
+        ret.append(
+            f"\033[0;0H",  # position
+        )
         if file:
-            print(strlist_to_str(ret), file=file)
+            print(strlist_to_str(ret), file=file, end="")
         return ret
 
     def render_rectangle(self, layout: Layout, table_chars=None):
