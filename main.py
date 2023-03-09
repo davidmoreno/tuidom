@@ -5,7 +5,7 @@ from typing import Literal, Optional
 
 from dataclasses import dataclass
 
-from tuidom import Div, Span, Style, XtermRenderer, Event, KeyPress
+from tuidom import Div, Element, Span, Style, XtermRenderer, Event, KeyPress
 
 
 @dataclass
@@ -76,6 +76,17 @@ def MenuBar(props: WelcomeProps):
 
 
 def Welcome(props: WelcomeProps = WelcomeProps()):
+    # return Div([
+    #     Div([
+    #         Span("Test"),
+    #     ], style=Style(width="100%", background="bg-primary", height=1, flexDirection="row")),
+    #     Div([
+
+    #     ], style=Style(flexGrow=1, background="bg-secondary", width="100%")),
+    #     Div([
+    #         Span("Footer"),
+    #     ], style=Style(width="100%", background="bg-primary", height=1, flexDirection="row")),
+    # ])
     return Div([
         MenuBar(props),
         Div([
@@ -85,9 +96,8 @@ def Welcome(props: WelcomeProps = WelcomeProps()):
             style=Style(
             borderStyle="double",
             padding=1,
-            background="bg-secondary",
-            color="text-secondary",
-            flexGrow=0,
+            background="bg-quaternary",
+            color="text-quaternary",
         )),
         Div([
             Span(text="Hola Mundo2!"),
@@ -123,9 +133,8 @@ if __name__ == '__main__':
     renderer = XtermRenderer()
     if sys.argv[1:] == ["layout"]:
         import json
-        print(
-            renderer.calculate_layout(dom),
-        )
+        renderer.calculate_layout(dom)
+        renderer.print_layout(dom)
     else:
         props = WelcomeProps()
         while True:

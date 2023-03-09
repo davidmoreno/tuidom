@@ -43,10 +43,18 @@ class Style:
             setattr(nstyle, key, nval)
         return nstyle
 
+    def __repr__(self):
+        ret = []
+        for key in self.__annotations__.keys():
+            val = getattr(self, key)
+            if val is not None:
+                ret.append(f"{key}={repr(val)}")
+        return f"Style({', '.join(ret)})"
+
 
 DEFAULT_CSS = Style(
-    color="black",
-    background="green",
+    color="white",
+    background="#333333",
     padding=0,
     scroll="auto",
     width="auto",
@@ -181,16 +189,18 @@ class TuiRenderer:
 
         return getattr(DEFAULT_CSS, name)
 
-    def calculate_pos(self, current, rule):
+    def calculate_proportion(self, current, rule):
         if rule is None:
-            return current
+            return None
         if isinstance(rule, int):
             return max(0, min(current, rule))
         if isinstance(rule, str):
+            if rule == "auto":
+                return None
             if rule.endswith("%"):
                 return int(current * int(rule[:-1]) / 100)
             logger.warning("Invalid width rule: %s", rule)
-        return current
+        return None
 
     def calculate_layout(self, dom):
         dom.layout.top = 1
@@ -205,14 +215,20 @@ class TuiRenderer:
     def calculate_layout_sizes(self, node: Element, oconstraints: Constraints):
         constraints = oconstraints.dup()
 
-        if node.style.width:
-            tmp = self.calculate_pos(constraints.maxWidth, node.style.width)
-            constraints.maxWidth = tmp
-            constraints.minWidth = tmp
-        if node.style.height:
-            tmp = self.calculate_pos(constraints.maxHeight, node.style.height)
-            constraints.maxHeight = tmp
-            constraints.minHeight = tmp
+        width = self.calculate_proportion(
+            constraints.maxWidth,
+            self.get_style(node, "width")
+        )
+        if width:
+            constraints.maxWidth = width
+            constraints.minWidth = width
+        height = self.calculate_proportion(
+            constraints.maxHeight,
+            self.get_style(node, "height")
+        )
+        if height:
+            constraints.maxHeight = height
+            constraints.minHeight = height
 
         width = 0
         height = 0
@@ -250,12 +266,12 @@ class TuiRenderer:
             height += node.style.padding*2
 
         node.layout.width = max(
-            min(width, oconstraints.maxWidth),
-            oconstraints.minWidth
+            min(width, constraints.maxWidth),
+            constraints.minWidth
         )
         node.layout.height = max(
-            min(height, oconstraints.maxHeight),
-            oconstraints.minHeight
+            min(height, constraints.maxHeight),
+            constraints.minHeight
         )
 
     def calculate_layout_column(self, node, constraints):
@@ -281,13 +297,17 @@ class TuiRenderer:
                 self.calculate_layout_sizes(child, Constraints(
                     constraints.minWidth,
                     constraints.maxWidth,
-                    0,
+                    cheight,
                     cheight,
                 ))
                 height += child.layout.height
                 width = max(width, child.layout.width)
                 constraints.maxHeight = constraints.maxHeight-child.layout.height
                 constraints.minWidth = max(constraints.minWidth, width)
+
+        # this is equivalent to align items stretch
+        for child in node.children:
+            child.layout.width = width
         return (width, height)
 
     def calculate_layout_row(self, node: Element, constraints: Constraints):
@@ -323,10 +343,9 @@ class TuiRenderer:
         return (width, height)
 
     def calculate_layout_element(self, node: Element):
-        ret = []
         top = node.layout.top
         left = node.layout.left
-        flexDirection = node.style.flexDirection
+        flexDirection = node.style.flexDirection or "column"
 
         if self.get_style(node, "borderStyle"):
             top += 1
@@ -342,13 +361,11 @@ class TuiRenderer:
             child.layout.top = top
             child.layout.left = left
 
-            ret.append(self.calculate_layout_element(child))
+            self.calculate_layout_element(child)
             if flexDirection == "column":
                 top += child.layout.height
             else:
                 left += child.layout.width
-
-        return ret
 
     def rgbcolor(self, color: str):
         if color.startswith("#"):
@@ -361,6 +378,11 @@ class TuiRenderer:
                 return f"{int(color[1:3], 16)};{int(color[3:5], 16)};{int(color[5:7], 16)}"
 
         return ';'.join(map(str, COLORS["black"]))
+
+    def print_layout(self, dom: Element, indent=0):
+        print(' '*indent, dom, dom.layout, dom.style)
+        for child in dom.children:
+            self.print_layout(child, indent + 2)
 
     def render(self, dom):
         raise NotImplementedError()
