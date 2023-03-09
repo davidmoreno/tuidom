@@ -1,3 +1,4 @@
+#!/bin/python3
 
 import sys
 from typing import Literal, Optional
@@ -83,6 +84,7 @@ def Welcome(props: WelcomeProps = WelcomeProps()):
             id="holamundo",
             style=Style(
             borderStyle="double",
+            padding=1,
             background="bg-secondary",
             color="text-secondary",
             flexGrow=0,
@@ -95,9 +97,14 @@ def Welcome(props: WelcomeProps = WelcomeProps()):
             padding=1,
             background="bg-tertiary",
             color="text-tertiary",
-            flexGrow=0,
+            width="100%",
+            flexGrow=1,
         )),
-        Span(props.status),
+        Span(props.status, style=Style(
+            width="100%",
+            background="bg-tertiary",
+            color="text-tertiary",
+        )),
     ],
         style=Style(
             background="bg-primary",

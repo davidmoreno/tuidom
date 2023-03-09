@@ -172,7 +172,7 @@ class TuiRenderer:
     width = 80
     height = 25
 
-    def get_style(self, element, name):
+    def get_style(self, element: Element, name):
         ret = element.style and getattr(element.style, name)
         if ret is not None:
             return ret
@@ -204,18 +204,12 @@ class TuiRenderer:
 
     def calculate_layout_sizes(self, node: Element, oconstraints: Constraints):
         constraints = oconstraints.dup()
-        print(f"Get sizes of {node}, {constraints}")
-        fixed_children = [x for x in node.children if not x.style.flexGrow]
-        variable_children = [x for x in node.children if x.style.flexGrow]
-        print(f"Fixed: {fixed_children}, variable: {variable_children}")
 
         if node.style.width:
-            print("Force width", node.style.width)
             tmp = self.calculate_pos(constraints.maxWidth, node.style.width)
             constraints.maxWidth = tmp
             constraints.minWidth = tmp
         if node.style.height:
-            print("Force height", node.style.height)
             tmp = self.calculate_pos(constraints.maxHeight, node.style.height)
             constraints.maxHeight = tmp
             constraints.minHeight = tmp
@@ -228,121 +222,127 @@ class TuiRenderer:
             height = math.ceil(width / constraints.maxWidth)
             width = min(width, constraints.maxWidth)
 
-        if node.style.borderStyle:
-            constraints.maxWidth = constraints.maxWidth-2
-            constraints.maxHeight = constraints.maxHeight-2
+        if self.get_style(node, "borderStyle"):
+            constraints.maxWidth -= 2
+            constraints.maxHeight -= 2
 
-        if node.style.padding:
-            constraints.maxWidth = constraints.maxWidth-node.style.padding
-            constraints.maxHeight = constraints.maxHeight-node.style.padding
+        padding = self.get_style(node, "padding")
+        if padding:
+            constraints.maxWidth -= padding * 2
+            constraints.maxHeight -= padding * 2
 
         flexDirection = node.style.flexDirection or "column"
         if flexDirection == "column":
-            for child in fixed_children:
-                self.calculate_layout_sizes(child, Constraints(
-                    0, constraints.maxWidth,
-                    0, constraints.maxHeight,
-                ))
-                height += child.layout.height
-                width = max(width, child.layout.width)
-                constraints.maxHeight = constraints.maxHeight-child.layout.height
-                constraints.minWidth = width
-
-            if variable_children:
-                quants = sum(x.style.flexGrow for x in variable_children)
-                quant_size = constraints.maxHeight / quants
-                print(f"Variable quant size: {quant_size}")
-                for child in variable_children:
-                    cheight = math.floor(quant_size * child.style.flexGrow)
-                    self.calculate_layout_sizes(child, Constraints(
-                        constraints.minWidth,
-                        constraints.maxWidth,
-                        0,
-                        cheight,
-                    ))
-                    height += child.layout.height
-                    width = max(width, child.layout.width)
-                    constraints.maxHeight = constraints.maxHeight-child.layout.height
-                    constraints.minWidth = max(constraints.minWidth, width)
-                    print("height", height)
-        if flexDirection == "row":
-            for child in fixed_children:
-                self.calculate_layout_sizes(child, Constraints(
-                    0, constraints.maxWidth,
-                    0, constraints.maxHeight,
-                ))
-                width += child.layout.width
-                height = max(height, child.layout.height)
-                constraints.maxWidth = constraints.maxWidth-child.layout.width
-                constraints.minWidth = width
-
-            if variable_children:
-                quants = sum(x.style.flexGrow for x in variable_children)
-                quant_size = constraints.maxWidth / quants
-                print(f"Variable quant size: {quant_size}")
-                for child in variable_children:
-                    cwidth = math.floor(quant_size * child.style.flexGrow)
-                    self.calculate_layout_sizes(child, Constraints(
-                        0,
-                        cwidth,
-                        constraints.minHeight,
-                        constraints.maxHeight,
-                    ))
-                    height += child.layout.height
-                    width = max(width, child.layout.width)
-                    constraints.maxWidth = constraints.maxWidth-child.layout.height
-                    constraints.minWidth = max(constraints.minWidth, width)
-                    print("width", width)
+            w, h = self.calculate_layout_column(node, constraints)
+            width += w
+            height += h
+        elif flexDirection == "row":
+            w, h = self.calculate_layout_row(node, constraints)
+            width += w
+            height += h
 
         if node.style.borderStyle:
             width += 2
             height += 2
 
         if node.style.padding:
-            width += node.style.padding
-            height += node.style.padding
+            width += node.style.padding*2
+            height += node.style.padding*2
 
         node.layout.width = max(
-            min(width, oconstraints.maxWidth), oconstraints.minWidth)
+            min(width, oconstraints.maxWidth),
+            oconstraints.minWidth
+        )
         node.layout.height = max(
-            min(height, oconstraints.maxHeight), oconstraints.minHeight)
+            min(height, oconstraints.maxHeight),
+            oconstraints.minHeight
+        )
 
-        print(f"{node} size is {node.layout} ({oconstraints})")
+    def calculate_layout_column(self, node, constraints):
+        fixed_children = [x for x in node.children if not x.style.flexGrow]
+        variable_children = [x for x in node.children if x.style.flexGrow]
+        width = 0
+        height = 0
+        for child in fixed_children:
+            self.calculate_layout_sizes(child, Constraints(
+                0, constraints.maxWidth,
+                0, constraints.maxHeight,
+            ))
+            height += child.layout.height
+            width = max(width, child.layout.width)
+            constraints.maxHeight = constraints.maxHeight-child.layout.height
+            constraints.minWidth = width
+
+        if variable_children:
+            quants = sum(x.style.flexGrow for x in variable_children)
+            quant_size = constraints.maxHeight / quants
+            for child in variable_children:
+                cheight = math.floor(quant_size * child.style.flexGrow)
+                self.calculate_layout_sizes(child, Constraints(
+                    constraints.minWidth,
+                    constraints.maxWidth,
+                    0,
+                    cheight,
+                ))
+                height += child.layout.height
+                width = max(width, child.layout.width)
+                constraints.maxHeight = constraints.maxHeight-child.layout.height
+                constraints.minWidth = max(constraints.minWidth, width)
+        return (width, height)
+
+    def calculate_layout_row(self, node: Element, constraints: Constraints):
+        fixed_children = [x for x in node.children if not x.style.flexGrow]
+        variable_children = [x for x in node.children if x.style.flexGrow]
+        width = 0
+        height = 0
+        for child in fixed_children:
+            self.calculate_layout_sizes(child, Constraints(
+                0, constraints.maxWidth,
+                0, constraints.maxHeight,
+            ))
+            width += child.layout.width
+            height = max(height, child.layout.height)
+            constraints.maxWidth = constraints.maxWidth-child.layout.width
+            constraints.minWidth = width
+
+        if variable_children:
+            quants = sum(x.style.flexGrow for x in variable_children)
+            quant_size = constraints.maxWidth / quants
+            for child in variable_children:
+                cwidth = math.floor(quant_size * child.style.flexGrow)
+                self.calculate_layout_sizes(child, Constraints(
+                    0,
+                    cwidth,
+                    constraints.minHeight,
+                    constraints.maxHeight,
+                ))
+                height += child.layout.height
+                width = max(width, child.layout.width)
+                constraints.maxWidth = constraints.maxWidth-child.layout.height
+                constraints.minWidth = max(constraints.minWidth, width)
+        return (width, height)
 
     def calculate_layout_element(self, node: Element):
-        ret = [node.layout]
+        ret = []
         top = node.layout.top
         left = node.layout.left
         flexDirection = node.style.flexDirection
 
+        if self.get_style(node, "borderStyle"):
+            top += 1
+            left += 1
+
+        padding = self.get_style(node, "padding")
+        if padding:
+            top += padding
+            left += padding
+
         for child in node.children:
-            # print(
-            #     parent.__class__.__name__,
-            #     "#", parent.id,
-            #     "\n  ", parent.layout,
-            #     "\n  ", child.__class__.__name__, "#", child.id,
-            #     "\n  ", child.style
-            # )
             child.parent = node
-            child.layout.top = top + self.calculate_pos(
-                node.layout.height - child.layout.height - top,
-                child.style and child.style.top or 0
-            )
-            child.layout.left = left + self.calculate_pos(
-                node.layout.width - child.layout.width - left,
-                child.style and child.style.left or 0
-            )
+            child.layout.top = top
+            child.layout.left = left
 
-            if node.style and node.style.borderStyle:
-                child.layout.top += 1
-                child.layout.left += 1
-                child.layout.width -= 2
-                child.layout.height -= 2
-
-            ret = [
-                *ret,
-                *self.calculate_layout_element(child),
-            ]
+            ret.append(self.calculate_layout_element(child))
             if flexDirection == "column":
                 top += child.layout.height
             else:
@@ -439,14 +439,14 @@ class XtermRenderer(TuiRenderer):
                 table_chars[3],
             ]
 
-    def render_element(self, dom: Element):
-        background = self.rgbcolor(self.get_style(dom, "background"))
-        color = self.rgbcolor(self.get_style(dom, "color"))
-        layout = dom.layout
+    def render_element(self, node: Element):
+        background = self.rgbcolor(self.get_style(node, "background"))
+        color = self.rgbcolor(self.get_style(node, "color"))
+        layout = node.layout
 
         table_chars = None
-        if dom.style and dom.style.borderStyle:
-            style = dom.style.borderStyle
+        if node.style and node.style.borderStyle:
+            style = node.style.borderStyle
             if style == "single":
                 table_chars = "┌┐└┘─│"
             elif style == "double":
@@ -459,35 +459,46 @@ class XtermRenderer(TuiRenderer):
             self.render_rectangle(layout, table_chars)
         ]
 
-        if isinstance(dom, Span):
-            if dom.style and dom.style.borderStyle:
-                ret.append(
-                    f"\033[{layout.top + 1};{layout.left + 2}H",  # position
-                )
-            else:
-                ret.append(
-                    f"\033[{layout.top};{layout.left}H",  # position
-                )
-            bold = self.get_style(dom, "bold")
-            if bold:
-                ret.append(
-                    f"\033[1m",
-                )
-            underline = self.get_style(dom, "underline")
-            if underline:
-                ret.append(
-                    f"\033[4m",
-                )
+        if isinstance(node, Span):
+            ret.append(self.render_span(node))
 
-            ret.append(dom.text)
-
-            if bold or underline:
-                ret.append(
-                    f"\033[0m",  # normal
-                )
-
-        for children in dom.children:
+        for children in node.children:
             ret.append(self.render_element(children))
+        return ret
+
+    def render_span(self, node: Element):
+        ret = []
+        layout = node.layout
+        left, top = layout.left, layout.top
+
+        if self.get_style(node, "borderStyle"):
+            left += 1
+            top += 1
+        padding = self.get_style(node, "padding")
+        if padding:
+            left += padding
+            top += padding
+        ret.append(
+            f"\033[{layout.top};{layout.left}H",  # position
+        )
+
+        bold = self.get_style(node, "bold")
+        if bold:
+            ret.append(
+                f"\033[1m",
+            )
+        underline = self.get_style(node, "underline")
+        if underline:
+            ret.append(
+                f"\033[4m",
+            )
+
+        ret.append(node.text)
+
+        if bold or underline:
+            ret.append(
+                f"\033[0m",  # normal
+            )
         return ret
 
     def reset(self):
