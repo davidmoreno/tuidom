@@ -19,6 +19,8 @@ class Style:
     padding: Optional[str | int] = None
     width: Optional[str | int] = None
     height: Optional[str | int] = None
+    bold: Optional[bool] = None
+    underline: Optional[bool] = None
     scroll: Optional[str] = None
     alignItems: Optional[Literal["top", "center", "bottom"]] = None
     justifyItems: Optional[Literal[
@@ -27,8 +29,19 @@ class Style:
     borderColor: Optional[str] = None
     top: Optional[str | int] = None
     left: Optional[str | int] = None
-    flexDirection: Literal["row", "column"] = "column"
-    flexGrow: int = 0
+    flexDirection: Literal["row", "column"] = None
+    flexGrow: int = None
+
+    def union(self, other):
+        if other is None or other is False:
+            return self
+        nstyle = Style()
+        for key in Style.__annotations__.keys():
+            nval = getattr(other, key)
+            if nval is None:
+                nval = getattr(self, key)
+            setattr(nstyle, key, nval)
+        return nstyle
 
 
 DEFAULT_CSS = Style(
@@ -192,8 +205,8 @@ class TuiRenderer:
     def calculate_layout_sizes(self, node: Element, oconstraints: Constraints):
         constraints = oconstraints.dup()
         print(f"Get sizes of {node}, {constraints}")
-        fixed_children = [x for x in node.children if x.style.flexGrow == 0]
-        variable_children = [x for x in node.children if x.style.flexGrow != 0]
+        fixed_children = [x for x in node.children if not x.style.flexGrow]
+        variable_children = [x for x in node.children if x.style.flexGrow]
         print(f"Fixed: {fixed_children}, variable: {variable_children}")
 
         if node.style.width:
@@ -223,7 +236,8 @@ class TuiRenderer:
             constraints.maxWidth = constraints.maxWidth-node.style.padding
             constraints.maxHeight = constraints.maxHeight-node.style.padding
 
-        if node.style.flexDirection == "column":
+        flexDirection = node.style.flexDirection or "column"
+        if flexDirection == "column":
             for child in fixed_children:
                 self.calculate_layout_sizes(child, Constraints(
                     0, constraints.maxWidth,
@@ -251,7 +265,7 @@ class TuiRenderer:
                     constraints.maxHeight = constraints.maxHeight-child.layout.height
                     constraints.minWidth = max(constraints.minWidth, width)
                     print("height", height)
-        if node.style.flexDirection == "row":
+        if flexDirection == "row":
             for child in fixed_children:
                 self.calculate_layout_sizes(child, Constraints(
                     0, constraints.maxWidth,
@@ -374,6 +388,10 @@ class XtermRenderer(TuiRenderer):
 
     def read_event(self):
         key = self.read_key()
+        if 0 < ord(key) < 27:
+            key = chr(ord(key) + ord('A') - 1)
+            key = f"CONTROL+{key}"
+            return KeyPress(key)
         return KeyPress(key.decode())
 
     def render(self, dom: Element, file=sys.stdout):
@@ -443,15 +461,30 @@ class XtermRenderer(TuiRenderer):
 
         if isinstance(dom, Span):
             if dom.style and dom.style.borderStyle:
-                ret.append([
+                ret.append(
                     f"\033[{layout.top + 1};{layout.left + 2}H",  # position
-                    dom.text,
-                ])
+                )
             else:
-                ret.append([
+                ret.append(
                     f"\033[{layout.top};{layout.left}H",  # position
-                    dom.text,
-                ])
+                )
+            bold = self.get_style(dom, "bold")
+            if bold:
+                ret.append(
+                    f"\033[1m",
+                )
+            underline = self.get_style(dom, "underline")
+            if underline:
+                ret.append(
+                    f"\033[4m",
+                )
+
+            ret.append(dom.text)
+
+            if bold or underline:
+                ret.append(
+                    f"\033[0m",  # normal
+                )
 
         for children in dom.children:
             ret.append(self.render_element(children))

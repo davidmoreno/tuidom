@@ -25,19 +25,45 @@ class WelcomeProps:
                 sys.exit()
             case _:
                 self.menu = None
+        self.status = str(ev)
 
 
-def MenuBar(props: WelcomeProps):
+def MenuEntry(label: str, shortcut: str = "", selected: bool = False):
     highlight = Style(
         background="bg-tertiary",
         color="text-tertiary"
     )
+    if shortcut:
+        idx = label.index(shortcut)
+        if idx == 0:
+            label = [shortcut, label[1:]]
+        elif idx == (len(label) - 1):
+            label = [label[:-1], shortcut]
+        else:
+            label = label.split(shortcut, maxsplit=2)
+            label = [label[0], shortcut, label[1]]
+    else:
+        label = [label]
+    return Div([
+        *[
+            Span(x, style=x == shortcut and Style(underline=True))
+            for x in label
+        ],
+        Span(" ")
+    ],
+        style=Style(flexDirection="row").union(
+        selected and highlight
+    )
+    )
+
+
+def MenuBar(props: WelcomeProps):
     return Div(
         [
-            Span("File ", style=props.menu == "file" and highlight),
-            Span("Edit ", style=props.menu == "edit" and highlight),
-            Span("Tools ", style=props.menu == "tools" and highlight),
-            Span("Exit ", style=props.menu == "exit" and highlight),
+            MenuEntry("File", "F", selected="file" == props.menu),
+            MenuEntry("Edit", "E", selected="edit" == props.menu),
+            MenuEntry("Tools", "T", selected="tools" == props.menu),
+            MenuEntry("Exit", "x", selected="exit" == props.menu),
         ],
         style=Style(
             background="bg-secondary",
@@ -79,7 +105,8 @@ def Welcome(props: WelcomeProps = WelcomeProps()):
             width="100%",
             height="100%",
             alignItems="center",
-            justifyItems="center"
+            justifyItems="center",
+            flexDirection="column",
     ),
     )
 
