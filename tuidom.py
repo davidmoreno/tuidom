@@ -1,10 +1,12 @@
 
-
+import os
+import termios
 import logging
 import math
 import shutil
 from dataclasses import dataclass, field
 import sys
+import tty
 from typing import List, Literal, Optional
 
 logger = logging.getLogger(__name__)
@@ -141,6 +143,16 @@ class Span(Element):
 
     def __repr__(self) -> str:
         return str(self)
+
+
+@dataclass
+class Event:
+    pass
+
+
+@dataclass
+class KeyPress:
+    key: str
 
 
 class TuiRenderer:
@@ -345,6 +357,24 @@ class XtermRenderer(TuiRenderer):
         width, height = shutil.get_terminal_size()
         self.width = width
         self.height = height - 1
+
+        fd = sys.stdin.fileno()
+        self.oldtermios = termios.tcgetattr(fd)
+        tty.setcbreak(fd)
+        new = termios.tcgetattr(fd)
+        new[3] = new[3] & ~(termios.ECHO | termios.ICANON)        # lflags
+        termios.tcsetattr(fd, termios.TCSADRAIN, new)
+
+    def close(self):
+        fd = sys.stdin.fileno()
+        termios.tcsetattr(fd, termios.TCSADRAIN, self.oldtermios)
+
+    def read_key(self):
+        return os.read(sys.stdin.fileno(), 1)
+
+    def read_event(self):
+        key = self.read_key()
+        return KeyPress(key.decode())
 
     def render(self, dom: Element, file=sys.stdout):
         self.calculate_layout(dom)

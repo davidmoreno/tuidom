@@ -2,14 +2,29 @@
 import sys
 from typing import Literal, Optional
 
-from attr import dataclass
+from dataclasses import dataclass
 
-from tuidom import Div, Span, Style, XtermRenderer, strlist_to_str
+from tuidom import Div, Span, Style, XtermRenderer, Event, KeyPress
 
 
 @dataclass
 class WelcomeProps:
     menu: Optional[Literal["file", "edit", "tools", "exit"]] = None
+    status: str = ""
+
+    def handle_event(self, ev: Event):
+        print(ev)
+        match ev:
+            case KeyPress('f'):
+                self.menu = "file"
+            case KeyPress('e'):
+                self.menu = "edit"
+            case KeyPress('t'):
+                self.menu = "tools"
+            case KeyPress('x'):
+                sys.exit()
+            case _:
+                self.menu = None
 
 
 def MenuBar(props: WelcomeProps):
@@ -56,7 +71,7 @@ def Welcome(props: WelcomeProps = WelcomeProps()):
             color="text-tertiary",
             flexGrow=0,
         )),
-        Span("Adios"),
+        Span(props.status),
     ],
         style=Style(
             background="bg-primary",
@@ -78,17 +93,9 @@ if __name__ == '__main__':
             renderer.calculate_layout(dom),
         )
     else:
-        renderer.render(dom)
-        input()
-        dom = Welcome(WelcomeProps(menu="edit"))
-        renderer.render(dom)
-        input()
-        dom = Welcome(WelcomeProps(menu="file"))
-        renderer.render(dom)
-        input()
-        dom = Welcome(WelcomeProps(menu="tools"))
-        renderer.render(dom)
-        input()
-        dom = Welcome(WelcomeProps(menu="exit"))
-        renderer.render(dom)
-        input()
+        props = WelcomeProps()
+        while True:
+            renderer.render(dom)
+            event = renderer.read_event()
+            props.handle_event(event)
+            dom = Welcome(props)
