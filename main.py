@@ -76,31 +76,16 @@ def MenuBar(props: WelcomeProps):
 
 
 def Welcome(props: WelcomeProps = WelcomeProps()):
-    # return Div([
-    #     Div([
-    #         Span("Test"),
-    #     ], style=Style(width="100%", background="bg-primary", height=1, flexDirection="row")),
-    #     Div([
-
-    #     ], style=Style(flexGrow=1, background="bg-secondary", width="100%")),
-    #     Div([
-    #         Span("Footer"),
-    #     ], style=Style(width="100%", background="bg-primary", height=1, flexDirection="row")),
-    # ])
     return Div([
         MenuBar(props),
         Div([
-            Span(text="Hola Mundo!"),
+            Span(text="Hello world!"),
         ],
+            className="border quaternary p-1",
             id="holamundo",
-            style=Style(
-            borderStyle="double",
-            padding=1,
-            background="bg-quaternary",
-            color="text-quaternary",
-        )),
+        ),
         Div([
-            Span(text="Hola Mundo2!"),
+            Span(text="Another with some padding!"),
         ],
             id="holamundo2",
             style=Style(
@@ -130,15 +115,63 @@ def Welcome(props: WelcomeProps = WelcomeProps()):
 
 if __name__ == '__main__':
     dom = Welcome()
-    renderer = XtermRenderer()
+    renderer = XtermRenderer(document=dom)
+    renderer.set_css({
+        ".menubar": {
+            "width": "100%",
+            "background": "bg-primary",
+            "color": "text-primary",
+            ".shortcut": {
+                "underline": True,
+                "bold": True,
+            }
+        },
+        ".main": {
+            "flexGrow": 1,
+            "background": "bg-secondary",
+        },
+        ".footer": {
+            "background": "bg-primary",
+        },
+        ".border": {
+            "borderStyle": "double",
+        },
+        ".p-1": {
+            "padding": 1,
+        },
+        ".primary": {
+            "background": "bg-primary",
+            "color": "text-primary",
+        },
+        ".quaternary": {
+            "background": "bg-quaternary",
+            "color": "text-quaternary",
+        },
+        ".w-full": {
+            "width": "100%",
+        },
+        ".h-1": {
+            "height": 1,
+        },
+        "h-full": {
+            "height": "100%",
+        },
+        ".flex-row": {
+            "flexDirection": "row",
+        },
+        ".flex-column": {
+            "flexDirection": "column",
+        },
+    })
+
     if sys.argv[1:] == ["layout"]:
         import json
-        renderer.calculate_layout(dom)
+        renderer.calculate_layout()
         renderer.print_layout(dom)
     else:
         props = WelcomeProps()
         while True:
-            renderer.render(dom)
+            renderer.set_document(Welcome(props))
+            renderer.render()
             event = renderer.read_event()
             props.handle_event(event)
-            dom = Welcome(props)

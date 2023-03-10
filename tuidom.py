@@ -54,13 +54,12 @@ class Style:
 
 DEFAULT_CSS = Style(
     color="white",
-    background="#333333",
+    background="grey",
     padding=0,
     scroll="auto",
-    width="auto",
-    height="auto",
     alignItems="top",
-    justifyItems="left"
+    justifyItems="left",
+    flexDirection="column",
 )
 
 INHERITABLE_STYLES = set(["color", "background"])
@@ -71,6 +70,7 @@ COLORS = {
     "green": (0, 255, 0),
     "blue": (0, 0, 255),
     "white": (255, 255, 255),
+    "grey": "#777777",
     "bg-primary": "#590696",
     "bg-secondary": "#37E2D5",
     "bg-tertiary": "#C70A80",
@@ -122,12 +122,14 @@ class Element:
     children: List['Element'] = field(default_factory=list)
     style: Optional[Style] = field(default_factory=Style)
     id: Optional[str] = None
+    className: Optional[str] = None
 
     # these is set by the renderer
     parent: Optional['Element'] = None
+    document: 'TuiRenderer' = None
     layout: Layout = field(default_factory=Layout)
 
-    def __init__(self, children=[], *, style=False, id=None):
+    def __init__(self, children=[], *, style=False, id=None, className=None):
         super().__init__()
         self.children = children
         if not style:  # this allows to pass None or False
@@ -135,6 +137,21 @@ class Element:
         self.style = style
         self.id = id
         self.layout = Layout()
+        self.className = className
+
+    def queryElement(self, query: str):
+        if query.startswith("#"):
+            if self.id and self.id == query[1:]:
+                return self
+        if query.startswith("."):
+            if self.className and any(x == query[1:] for x in self.className.split()):
+                return self
+
+        for x in self.children:
+            ret = x.queryElement(query)
+            if ret is not None:
+                return ret
+        return None
 
     def __str__(self) -> str:
         if self.id:
@@ -179,15 +196,53 @@ class KeyPress:
 class TuiRenderer:
     width = 80
     height = 25
+    document: Optional[Element] = None
+    css = {}
 
-    def get_style(self, element: Element, name):
-        ret = element.style and getattr(element.style, name)
+    def __init__(self, *, document=None, css=None):
+        if document:
+            self.set_document(document)
+        if css:
+            self.set_css(css)
+
+    def set_document(self, document):
+        self.document = document
+        self.set_document_fields(document)
+        return self
+
+    def set_document_fields(self, node):
+        node.document = self
+        for child in node.children:
+            child.parent = node
+            self.set_document_fields(child)
+
+    def set_css(self, css: dict):
+        self.css.update(css)
+        return self
+
+    def queryElement(self, query) -> Optional[Element]:
+        return self.document.queryElement(query)
+
+    def get_style(self, element: Element, key):
+        ret = element.style and getattr(element.style, key)
         if ret is not None:
             return ret
-        if element.parent is not None and name in INHERITABLE_STYLES:
-            return self.get_style(element.parent, name)
 
-        return getattr(DEFAULT_CSS, name)
+        # basic one level CSS
+        if element.className:
+            ret = None
+            for className in element.className.split():
+                className = f".{className}"
+                css = self.css.get(className)
+                if css and key in css:
+                    ret = css[key]
+            if ret:
+                return ret
+
+        if element.parent is not None and key in INHERITABLE_STYLES:
+            return self.get_style(element.parent, key)
+
+        return getattr(DEFAULT_CSS, key)
 
     def calculate_proportion(self, current, rule):
         if rule is None:
@@ -202,15 +257,16 @@ class TuiRenderer:
             logger.warning("Invalid width rule: %s", rule)
         return None
 
-    def calculate_layout(self, dom):
-        dom.layout.top = 1
-        dom.layout.left = 1
-        dom.layout.width = self.width
-        dom.layout.height = self.height
-        self.calculate_layout_sizes(dom, Constraints(
+    def calculate_layout(self):
+        document = self.document
+        document.layout.top = 1
+        document.layout.left = 1
+        document.layout.width = self.width
+        document.layout.height = self.height
+        self.calculate_layout_sizes(document, Constraints(
             self.width, self.width, self.height, self.height,
         ))
-        return self.calculate_layout_element(dom)
+        return self.calculate_layout_element(document)
 
     def calculate_layout_sizes(self, node: Element, oconstraints: Constraints):
         constraints = oconstraints.dup()
@@ -247,7 +303,7 @@ class TuiRenderer:
             constraints.maxWidth -= padding * 2
             constraints.maxHeight -= padding * 2
 
-        flexDirection = node.style.flexDirection or "column"
+        flexDirection = self.get_style(node, "flexDirection")
         if flexDirection == "column":
             w, h = self.calculate_layout_column(node, constraints)
             width += w
@@ -257,13 +313,14 @@ class TuiRenderer:
             width += w
             height += h
 
-        if node.style.borderStyle:
+        if self.get_style(node, "borderStyle"):
             width += 2
             height += 2
 
-        if node.style.padding:
-            width += node.style.padding*2
-            height += node.style.padding*2
+        padding = self.get_style(node, "padding")
+        if padding:
+            width += padding*2
+            height += padding*2
 
         node.layout.width = max(
             min(width, constraints.maxWidth),
@@ -275,8 +332,12 @@ class TuiRenderer:
         )
 
     def calculate_layout_column(self, node, constraints):
-        fixed_children = [x for x in node.children if not x.style.flexGrow]
-        variable_children = [x for x in node.children if x.style.flexGrow]
+        children_grow = [
+            (x, self.get_style(x, "flexGrow"))
+            for x in node.children
+        ]
+        fixed_children = [x[0] for x in children_grow if not x[1]]
+        variable_children = [x for x in children_grow if x[1]]
         width = 0
         height = 0
         for child in fixed_children:
@@ -287,13 +348,13 @@ class TuiRenderer:
             height += child.layout.height
             width = max(width, child.layout.width)
             constraints.maxHeight = constraints.maxHeight-child.layout.height
-            constraints.minWidth = width
+            constraints.minWidth = max(constraints.minWidth, width)
 
         if variable_children:
-            quants = sum(x.style.flexGrow for x in variable_children)
+            quants = sum(x[1] for x in variable_children)
             quant_size = constraints.maxHeight / quants
-            for child in variable_children:
-                cheight = math.floor(quant_size * child.style.flexGrow)
+            for child, grow in variable_children:
+                cheight = math.floor(quant_size * grow)
                 self.calculate_layout_sizes(child, Constraints(
                     constraints.minWidth,
                     constraints.maxWidth,
@@ -311,8 +372,12 @@ class TuiRenderer:
         return (width, height)
 
     def calculate_layout_row(self, node: Element, constraints: Constraints):
-        fixed_children = [x for x in node.children if not x.style.flexGrow]
-        variable_children = [x for x in node.children if x.style.flexGrow]
+        children_grow = [
+            (x, self.get_style(x, "flexGrow"))
+            for x in node.children
+        ]
+        fixed_children = [x[0] for x in children_grow if not x[1]]
+        variable_children = [x for x in children_grow if x[1]]
         width = 0
         height = 0
         for child in fixed_children:
@@ -323,13 +388,13 @@ class TuiRenderer:
             width += child.layout.width
             height = max(height, child.layout.height)
             constraints.maxWidth = constraints.maxWidth-child.layout.width
-            constraints.minWidth = width
+            constraints.minWidth = max(constraints.minWidth, width)
 
         if variable_children:
-            quants = sum(x.style.flexGrow for x in variable_children)
+            quants = sum(x[1] for x in variable_children)
             quant_size = constraints.maxWidth / quants
-            for child in variable_children:
-                cwidth = math.floor(quant_size * child.style.flexGrow)
+            for child, grow in variable_children:
+                cwidth = math.floor(quant_size * grow)
                 self.calculate_layout_sizes(child, Constraints(
                     0,
                     cwidth,
@@ -345,7 +410,7 @@ class TuiRenderer:
     def calculate_layout_element(self, node: Element):
         top = node.layout.top
         left = node.layout.left
-        flexDirection = node.style.flexDirection or "column"
+        flexDirection = self.get_style(node, "flexDirection")
 
         if self.get_style(node, "borderStyle"):
             top += 1
@@ -357,7 +422,6 @@ class TuiRenderer:
             left += padding
 
         for child in node.children:
-            child.parent = node
             child.layout.top = top
             child.layout.left = left
 
@@ -379,17 +443,19 @@ class TuiRenderer:
 
         return ';'.join(map(str, COLORS["black"]))
 
-    def print_layout(self, dom: Element, indent=0):
-        print(' '*indent, dom, dom.layout, dom.style)
+    def print_layout(self, dom: Element, indent=0, printer=print):
+        printer(
+            f"{' '*indent} {dom} {dom.layout} {dom.style} className={repr(dom.className or '')}")
         for child in dom.children:
-            self.print_layout(child, indent + 2)
+            self.print_layout(child, indent + 2, printer=printer)
 
-    def render(self, dom):
+    def render(self):
         raise NotImplementedError()
 
 
 class XtermRenderer(TuiRenderer):
-    def __init__(self):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         width, height = shutil.get_terminal_size()
         self.width = width
         self.height = height
@@ -416,10 +482,10 @@ class XtermRenderer(TuiRenderer):
             return KeyPress(key)
         return KeyPress(key.decode())
 
-    def render(self, dom: Element, file=sys.stdout):
-        self.calculate_layout(dom)
+    def render(self, *, file=sys.stdout):
+        self.calculate_layout()
 
-        ret = self.render_element(dom)
+        ret = self.render_element(self.document)
         # ret.append(
         #     f"\033[{self.width};{self.height}H",  # position
         # )
@@ -470,11 +536,10 @@ class XtermRenderer(TuiRenderer):
         layout = node.layout
 
         table_chars = None
-        if node.style and node.style.borderStyle:
-            style = node.style.borderStyle
-            if style == "single":
+        match self.get_style(node, "borderStyle"):
+            case "single":
                 table_chars = "┌┐└┘─│"
-            elif style == "double":
+            case "double":
                 table_chars = "╔╗╚╝═║"
 
         ret = [
