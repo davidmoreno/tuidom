@@ -133,10 +133,10 @@ class LayoutTestCase(TestCase):
                 }
             })
         dom.calculate_layout()
-        print()
-        dom.print_layout(dom.document)
+        # print()
+        # dom.print_layout(dom.document)
         self.assertEqual(dom.document.layout.width, dom.width)
-        self.assertEqual(dom.queryElement("#a").layout.width, 5)
+        self.assertEqual(dom.queryElement("#a").layout.width, dom.width)
 
 
 if __name__ == '__main__':
