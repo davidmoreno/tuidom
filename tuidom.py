@@ -71,13 +71,13 @@ COLORS = {
     "blue": (0, 0, 255),
     "white": (255, 255, 255),
     "grey": "#777777",
-    "bg-primary": "#590696",
-    "bg-secondary": "#37E2D5",
+    "bg-primary": "#37E2D5",
+    "bg-secondary": "#590696",
     "bg-tertiary": "#C70A80",
     "bg-quaternary": "#FBCB0A",
 
-    "text-primary": "#ffffff",
-    "text-secondary": "#000000",
+    "text-primary": "#000000",
+    "text-secondary": "#ffffff",
     "text-tertiary": "#ffffff",
     "text-quaternary": "#000000",
 }
@@ -123,14 +123,18 @@ class Element:
     style: Optional[Style] = field(default_factory=Style)
     id: Optional[str] = None
     className: Optional[str] = None
+
+    # event handlers
     on_focus: Callable | bool = False
+    on_click: Callable | bool = False
+    on_keypress: Callable | bool = False
 
     # these is set by the renderer
     parent: Optional['Element'] = None
     document: 'TuiRenderer' = None
     layout: Layout = field(default_factory=Layout)
 
-    def __init__(self, children=[], *, style=False, id=None, className=None, on_focus=False):
+    def __init__(self, children=[], *, style=False, id=None, className=None, on_focus=False, on_click=False):
         super().__init__()
         self.children = children
         if not style:  # this allows to pass None or False
@@ -140,6 +144,7 @@ class Element:
         self.layout = Layout()
         self.className = className
         self.on_focus = on_focus
+        self.on_click = on_click
 
     def queryElement(self, query: str):
         return self.document.queryElementCompiled(self, Query(query))
@@ -185,6 +190,16 @@ class KeyPress(Event):
 
     def __init__(self, key):
         self.key = key
+
+
+@dataclass
+class Focus(Event):
+    pass
+
+
+@dataclass
+class Click(Event):
+    pass
 
 
 class Query:
@@ -488,6 +503,8 @@ class TuiRenderer:
     def handle_event(self, event: Event):
         HANDLER_NAMES = {
             KeyPress: "on_keypress",
+            Click: "on_click",
+            Focus: "on_focus",
         }
         handler_name = HANDLER_NAMES.get(event.__class__, "on_event")
         if self.selected_element:
@@ -503,6 +520,8 @@ class TuiRenderer:
     def on_keypress(self, event: KeyPress):
         if event.key == "TAB":
             self.focus_next()
+        if event.key == "ENTER":
+            self.handle_event(Click())
 
     def preorder_traversal(self, node):
         yield node
@@ -571,6 +590,8 @@ class XtermRenderer(TuiRenderer):
             key = chr(ord(key) + ord('A') - 1)
             if key == "I":
                 key = "TAB"
+            elif key == "J":
+                key = "ENTER"
             else:
                 key = f"CONTROL+{key}"
             return KeyPress(key)
@@ -584,7 +605,7 @@ class XtermRenderer(TuiRenderer):
         #     f"\033[{self.width};{self.height}H",  # position
         # )
         ret.append(
-            f"\033[0;0H",  # position
+            f"\033[{self.height-1};0H",  # position
         )
         if file:
             print(strlist_to_str(ret), file=file, end="")

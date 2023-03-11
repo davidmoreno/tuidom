@@ -29,7 +29,7 @@ class WelcomeProps:
         self.status = str(ev)
 
 
-def MenuEntry(label: str, shortcut: str = ""):
+def MenuEntry(label: str, shortcut: str = "", on_click: callable = None):
     if shortcut:
         idx = label.index(shortcut)
         if idx == 0:
@@ -50,6 +50,7 @@ def MenuEntry(label: str, shortcut: str = ""):
     ],
         className="menu_entry",
         on_focus=True,
+        on_click=on_click,
     )
 
 
@@ -59,14 +60,9 @@ def MenuBar(props: WelcomeProps):
             MenuEntry("File", "F"),
             MenuEntry("Edit", "E"),
             MenuEntry("Tools", "T"),
-            MenuEntry("Exit", "x"),
+            MenuEntry("Exit", "x", on_click=lambda ev: sys.exit(0)),
         ],
-        style=Style(
-            background="bg-secondary",
-            color="text-secondary",
-            flexDirection="row",
-            width="100%",
-        )
+        className="menubar"
     )
 
 
@@ -119,7 +115,8 @@ if __name__ == '__main__':
             ".shortcut": {
                 "underline": True,
                 "bold": True,
-            }
+            },
+            "flexDirection": "row",
         },
         ".main": {
             "flexGrow": 1,
@@ -135,8 +132,8 @@ if __name__ == '__main__':
             "flexDirection": "row",
         },
         ".menu_entry:focus": {
-            "background": "text-primary",
-            "color": "bg-primary",
+            "background": "text-secondary",
+            "color": "bg-secondary",
         },
         ".p-1": {
             "padding": 1,
@@ -172,7 +169,9 @@ if __name__ == '__main__':
         renderer.print_layout(dom)
     else:
         props = WelcomeProps()
+        event = ""
         while True:
             renderer.render()
+            print(event)
             event = renderer.read_event()
             renderer.handle_event(event)
