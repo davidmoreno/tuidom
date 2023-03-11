@@ -149,6 +149,7 @@ class Element:
     parent: Optional['Element'] = None
     document: 'TuiRenderer' = None
     layout: Layout = field(default_factory=Layout)
+    pseudo: list[str] = field(default_factory=list)
 
     def __init__(self, children=[], *, style=False, id=None, className=None, on_focus=False, on_click=False):
         super().__init__()
@@ -159,6 +160,7 @@ class Element:
         self.id = id
         self.layout = Layout()
         self.className = className
+        self.pseudo = []
         self.on_focus = on_focus
         self.on_click = on_click
 
@@ -310,21 +312,12 @@ class TuiRenderer:
             if query.match(node):
                 return node
 
-    def get_style(self, element: Element, key: str, pseudo: str = ""):
+    def get_style(self, element: Element, key: str):
         ret = element.style and getattr(element.style, key)
         if ret is not None:
             return ret
 
-        pseudol = [""]
-        if pseudo:
-            pseudol.append(pseudo)
-        if self.selected_element is element:
-            pseudol.append(":focus")
-        else:
-            # check all children.. if any of my children is selected, im too. FIXME! this is O(n**4) or worse
-            for node in self.preorder_traversal(element):
-                if self.selected_element is node:
-                    pseudol.append(":focus")
+        pseudol = ["", *element.pseudo]
 
         # basic one level CSS
         if element.className:
@@ -339,8 +332,7 @@ class TuiRenderer:
                 return ret
 
         if element.parent is not None and key in INHERITABLE_STYLES:
-            for ps in pseudol:
-                return self.get_style(element.parent, key, ps)
+            return self.get_style(element.parent, key)
 
         return getattr(DEFAULT_CSS, key)
 
@@ -565,9 +557,18 @@ class TuiRenderer:
 
     def focus_next(self):
         for item in self.preorder_traversal(self.document):
+            item.pseudo = [x for x in item.pseudo if x != ":focus"]
+
+        for item in self.preorder_traversal(self.document):
             if item.on_focus:
                 if self.selected_element is None:
                     self.selected_element = item
+
+                    parent = item
+                    while parent:
+                        parent.pseudo.append(":focus")
+                        parent = parent.parent
+
                     return item
                 elif self.selected_element is item:
                     self.selected_element = None
