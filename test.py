@@ -61,7 +61,8 @@ class ClassNameTestCase(TestCase):
                 ".menuitem:focus": {
                     "color": "blue",
                     "background": "white",
-                }
+                },
+                ""
             }
         )
         file = dom.queryElement("#file")

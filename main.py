@@ -5,7 +5,7 @@ from typing import Literal, Optional
 
 from dataclasses import dataclass
 
-from tuidom import Div, Element, Span, Style, XtermRenderer, Event, KeyPress
+from tuidom import Div, Element, Span, Style, TextInput, XtermRenderer, Event, KeyPress
 
 
 @dataclass
@@ -76,21 +76,21 @@ def Welcome(props: WelcomeProps = WelcomeProps()):
             id="holamundo",
         ),
         Div([
-            Span(text="", id="textarea"),
-        ],
-            id="holamundo2",
+            TextInput(
+                id="textarea",
+                className="w-full",
+            )],
+            className="textinput",
+            ),
+        Span(
+            props.status,
+            id="status",
             style=Style(
-            padding=1,
-            background="bg-tertiary",
-            color="text-tertiary",
-            width="100%",
-            flexGrow=1,
-        )),
-        Span(props.status, style=Style(
-            width="100%",
-            background="bg-tertiary",
-            color="text-tertiary",
-        )),
+                width="100%",
+                background="bg-tertiary",
+                color="text-tertiary",
+            )
+        ),
     ],
         style=Style(
             background="bg-primary",
@@ -135,6 +135,18 @@ def main():
             "background": "text-secondary",
             "color": "bg-secondary",
         },
+        ".textinput": {
+            "flexGrow": 1,
+            "padding": 1,
+            "background": "bg-secondary",
+            "color": "text-secondary",
+        },
+        ".textinput:focus": {
+            "background": "white",
+            "color": "black",
+            "padding": 0,
+            "borderStyle": "single",
+        },
         ".p-1": {
             "padding": 1,
         },
@@ -170,24 +182,13 @@ def main():
     else:
         props = WelcomeProps()
         event = ""
+        textarea = renderer.queryElement("#textarea")
+        status = renderer.queryElement("#status")
         while True:
             renderer.render()
-            print(event)
             event = renderer.read_event()
             event = renderer.handle_event(event)
-            if isinstance(event, KeyPress):
-                textarea = renderer.queryElement("#textarea")
-                textarea.text = update_text(textarea.text, event.key)
-
-
-def update_text(base, update):
-    if update == "\x7f":
-        base = base[:-1]
-    elif update == "ENTER":
-        base = base + "\n"
-    elif len(update) == 1:
-        base = base + update
-    return base
+            status.text = str(event)
 
 
 if __name__ == '__main__':

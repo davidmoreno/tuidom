@@ -81,13 +81,29 @@ COLORS = {
     "text-tertiary": "#ffffff",
     "text-quaternary": "#000000",
 }
-# COLORS = {
-#     "black": "#000000",
-#     "red": "#ff0000",
-#     "green": "#00ff00",
-#     "blue": "#0000ff",
-#     "white": "#ffFFFF",
-# }
+
+
+@dataclass
+class Event:
+    stopPropagation: bool = False
+
+
+@dataclass
+class KeyPress(Event):
+    key: str = ""
+
+    def __init__(self, key):
+        self.key = key
+
+
+@dataclass
+class Focus(Event):
+    pass
+
+
+@dataclass
+class Click(Event):
+    pass
 
 
 @dataclass
@@ -179,27 +195,27 @@ class Span(Element):
         return str(self)
 
 
-@dataclass
-class Event:
-    stopPropagation: bool = False
+class TextInput(Span):
 
+    def __init__(self, text="", **kwargs):
+        super().__init__(text)
+        self.on_keypress = self.handle_keypress
+        self.on_focus = True
 
-@dataclass
-class KeyPress(Event):
-    key: str = ""
+    def handle_keypress(self, event: KeyPress):
+        key = event.key
+        base = self.text
+        if key == "\x7f":
+            base = base[:-1]
+        elif key == "ENTER":
+            base = base + "\n"
+        elif len(key) == 1:
+            base = base + key
+        self.text = base
 
-    def __init__(self, key):
-        self.key = key
-
-
-@dataclass
-class Focus(Event):
-    pass
-
-
-@dataclass
-class Click(Event):
-    pass
+        lines = self.text.split("\n")
+        self.document.cursor.top = self.layout.top + len(lines) - 1
+        self.document.cursor.left = self.layout.left + len(lines[-1])
 
 
 class Query:
@@ -251,12 +267,19 @@ class Query:
         return matches
 
 
+@dataclass
+class Cursor:
+    top: int = 1
+    left: int = 1
+
+
 class TuiRenderer:
     width = 80
     height = 25
     document: Optional[Element] = None
     css = {}
     selected_element = None
+    cursor = Cursor(1, 1)
 
     def __init__(self, *, document=None, css=None):
         if document:
@@ -287,19 +310,26 @@ class TuiRenderer:
             if query.match(node):
                 return node
 
-    def get_style(self, element: Element, key: str):
+    def get_style(self, element: Element, key: str, pseudo: str = ""):
         ret = element.style and getattr(element.style, key)
         if ret is not None:
             return ret
 
-        pseudo = ["", ]
+        pseudol = [""]
+        if pseudo:
+            pseudol.append(pseudo)
         if self.selected_element is element:
-            pseudo.append(":focus")
+            pseudol.append(":focus")
+        else:
+            # check all children.. if any of my children is selected, im too. FIXME! this is O(n**4) or worse
+            for node in self.preorder_traversal(element):
+                if self.selected_element is node:
+                    pseudol.append(":focus")
 
         # basic one level CSS
         if element.className:
             ret = None
-            for ps in pseudo:
+            for ps in pseudol:
                 for className in element.className.split():
                     className = f".{className}{ps}"
                     css = self.css.get(className)
@@ -309,7 +339,8 @@ class TuiRenderer:
                 return ret
 
         if element.parent is not None and key in INHERITABLE_STYLES:
-            return self.get_style(element.parent, key)
+            for ps in pseudol:
+                return self.get_style(element.parent, key, ps)
 
         return getattr(DEFAULT_CSS, key)
 
@@ -609,7 +640,7 @@ class XtermRenderer(TuiRenderer):
         #     f"\033[{self.width};{self.height}H",  # position
         # )
         ret.append(
-            f"\033[{self.height-1};0H",  # position
+            f"\033[{self.cursor.top};{self.cursor.left}H",  # position
         )
         if file:
             print(strlist_to_str(ret), file=file, end="")
@@ -687,9 +718,6 @@ class XtermRenderer(TuiRenderer):
         if padding:
             left += padding
             top += padding
-        ret.append(
-            f"\033[{layout.top};{layout.left}H",  # position
-        )
 
         bold = self.get_style(node, "bold")
         if bold:
@@ -702,7 +730,11 @@ class XtermRenderer(TuiRenderer):
                 f"\033[4m",
             )
 
-        ret.append(node.text)
+        for lineno, line in enumerate(node.text.split("\n")):
+            ret.append(
+                f"\033[{layout.top+lineno};{layout.left}H",  # position
+            )
+            ret.append(line)
 
         if bold or underline:
             ret.append(
