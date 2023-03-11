@@ -202,7 +202,12 @@ class TextInput(Span):
     def __init__(self, text="", **kwargs):
         super().__init__(text)
         self.on_keypress = self.handle_keypress
-        self.on_focus = True
+        self.on_focus = self.handle_on_focus
+
+    def handle_on_focus(self, _event):
+        lines = self.text.split("\n")
+        self.document.cursor.top = self.layout.top + len(lines) - 1
+        self.document.cursor.left = self.layout.left + len(lines[-1])
 
     def handle_keypress(self, event: KeyPress):
         key = event.key
@@ -532,12 +537,12 @@ class TuiRenderer:
         handler_name = HANDLER_NAMES.get(event.__class__, "on_event")
         if self.selected_element:
             handler = getattr(self.selected_element, handler_name, None)
-            if handler:
+            if callable(handler):
                 handler(event)
 
         if not event.stopPropagation:
             handler = getattr(self, handler_name, None)
-            if handler:
+            if callable(handler):
                 handler(event)
 
         if not event.stopPropagation:
@@ -569,6 +574,7 @@ class TuiRenderer:
                         parent.pseudo.append(":focus")
                         parent = parent.parent
 
+                    self.handle_event(Focus())
                     return item
                 elif self.selected_element is item:
                     self.selected_element = None

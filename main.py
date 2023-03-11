@@ -70,10 +70,9 @@ def Welcome(props: WelcomeProps = WelcomeProps()):
     return Div([
         MenuBar(props),
         Div([
-            Span(text="Hello world!"),
+            Span(text="Write your text. Change focus with TAB."),
         ],
             className="border quaternary p-1",
-            id="holamundo",
         ),
         Div([
             TextInput(
@@ -110,8 +109,8 @@ def main():
     renderer.set_css({
         ".menubar": {
             "width": "100%",
-            "background": "bg-primary",
-            "color": "text-primary",
+            "background": "bg-tertiary",
+            "color": "text-tertiary",
             ".shortcut": {
                 "underline": True,
                 "bold": True,
@@ -142,9 +141,8 @@ def main():
             "color": "text-secondary",
         },
         ".textinput:focus": {
-            "background": "white",
-            "color": "black",
             "padding": 0,
+            "borderColor": "red",
             "borderStyle": "single",
         },
         ".p-1": {
