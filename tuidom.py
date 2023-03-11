@@ -517,6 +517,10 @@ class TuiRenderer:
             if handler:
                 handler(event)
 
+        if not event.stopPropagation:
+            return event
+        return None
+
     def on_keypress(self, event: KeyPress):
         if event.key == "TAB":
             self.focus_next()

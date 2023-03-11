@@ -76,7 +76,7 @@ def Welcome(props: WelcomeProps = WelcomeProps()):
             id="holamundo",
         ),
         Div([
-            Span(text="Another with some padding!"),
+            Span(text="", id="textarea"),
         ],
             id="holamundo2",
             style=Style(
@@ -104,7 +104,7 @@ def Welcome(props: WelcomeProps = WelcomeProps()):
     )
 
 
-if __name__ == '__main__':
+def main():
     dom = Welcome()
     renderer = XtermRenderer(document=dom)
     renderer.set_css({
@@ -174,4 +174,21 @@ if __name__ == '__main__':
             renderer.render()
             print(event)
             event = renderer.read_event()
-            renderer.handle_event(event)
+            event = renderer.handle_event(event)
+            if isinstance(event, KeyPress):
+                textarea = renderer.queryElement("#textarea")
+                textarea.text = update_text(textarea.text, event.key)
+
+
+def update_text(base, update):
+    if update == "\x7f":
+        base = base[:-1]
+    elif update == "ENTER":
+        base = base + "\n"
+    elif len(update) == 1:
+        base = base + update
+    return base
+
+
+if __name__ == '__main__':
+    main()
