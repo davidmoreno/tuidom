@@ -14,7 +14,6 @@ class WelcomeProps:
     status: str = ""
 
     def handle_event(self, ev: Event):
-        print(ev)
         match ev:
             case KeyPress('f'):
                 self.menu = "file"
@@ -55,12 +54,15 @@ def MenuEntry(label: str, shortcut: str = "", on_click: callable = None):
 
 
 def MenuBar(props: WelcomeProps):
+    def close_all(ev):
+        ev.element.document.close()
+        sys.exit(0)
     return Div(
         [
             MenuEntry("File", "F"),
             MenuEntry("Edit", "E"),
             MenuEntry("Tools", "T"),
-            MenuEntry("Exit", "x", on_click=lambda ev: sys.exit(0)),
+            MenuEntry("Exit", "x", on_click=close_all),
         ],
         className="menubar"
     )

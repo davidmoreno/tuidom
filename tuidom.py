@@ -86,6 +86,7 @@ COLORS = {
 @dataclass
 class Event:
     stopPropagation: bool = False
+    element: "Element" = None
 
 
 @dataclass
@@ -534,6 +535,7 @@ class TuiRenderer:
             Click: "on_click",
             Focus: "on_focus",
         }
+        event.element = self.selected_element
         handler_name = HANDLER_NAMES.get(event.__class__, "on_event")
         if self.selected_element:
             handler = getattr(self.selected_element, handler_name, None)
@@ -619,7 +621,13 @@ class XtermRenderer(TuiRenderer):
         new[3] = new[3] & ~(termios.ECHO | termios.ICANON)        # lflags
         termios.tcsetattr(fd, termios.TCSADRAIN, new)
 
+        # save screen state
+        print("\033[?1049h;")
+
     def close(self):
+        # recover saved state
+        print("\033[?1049l;")
+
         fd = sys.stdin.fileno()
         termios.tcsetattr(fd, termios.TCSADRAIN, self.oldtermios)
 
