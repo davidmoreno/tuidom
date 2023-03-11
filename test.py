@@ -2,7 +2,7 @@
 
 import logging
 from unittest import TestCase
-from tuidom import Div, Span, Style, TuiRenderer, XtermRenderer
+from tuidom import Div, KeyPress, Span, Style, TuiRenderer, XtermRenderer
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +44,30 @@ class ClassNameTestCase(TestCase):
         inner = dom.queryElement("#inner")
         self.assertEqual(renderer.get_style(inner, "width"), None)
         self.assertEqual(renderer.get_style(inner, "color"), "blue")
+
+    def test_focus_pseudo_element(self):
+        dom = Div([
+            Span("File ", className="menuitem", id="file", on_focus=True),
+            Span("Edit ", className="menuitem", id="edit", on_focus=True),
+            Span("Tools ", className="menuitem", id="tools", on_focus=True),
+        ], className="menu")
+        renderer = TuiRenderer(
+            document=dom,
+            css={
+                ".menuitem": {
+                    "color": "white",
+                    "background": "blue",
+                },
+                ".menuitem:focus": {
+                    "color": "blue",
+                    "background": "white",
+                }
+            }
+        )
+        file = dom.queryElement("#file")
+        self.assertEqual(renderer.get_style(file, "color"), "white")
+        renderer.selected_element = file
+        self.assertEqual(renderer.get_style(file, "color"), "blue")
 
 
 class LayoutTestCase(TestCase):
@@ -139,8 +163,46 @@ class LayoutTestCase(TestCase):
         self.assertEqual(dom.queryElement("#a").layout.width, dom.width)
 
 
+class EventsTestCase(TestCase):
+    def test_focus(self):
+        dom = TuiRenderer(
+            document=Div([
+                Div([
+                    Div([Span("A")], id="a", on_focus=True),
+                    Div([Span("B")], id="b", on_focus=True),
+                    Div([Span("C")], id="c", on_focus=True),
+                ]),
+                Div(),
+            ])
+        )
+        # until first tab nothing is selected
+        sel = dom.selected_element
+        self.assertEqual(sel, None)
+
+        dom.handle_event(KeyPress("TAB"))
+        sel = dom.selected_element
+        self.assertEqual(sel.id, "a")
+
+        dom.handle_event(KeyPress("TAB"))
+        sel = dom.selected_element
+        self.assertEqual(sel.id, "b")
+
+        dom.handle_event(KeyPress("TAB"))
+        sel = dom.selected_element
+        self.assertEqual(sel.id, "c")
+
+        dom.handle_event(KeyPress("TAB"))
+        self.assertIsNone(dom.selected_element, "a")
+
+        dom.handle_event(KeyPress("TAB"))
+        sel = dom.queryElement(":focus")
+        self.assertEqual(sel.id, "a")
+        sel = dom.queryElement("#a:focus")
+        self.assertEqual(sel.id, "a")
+
+
 if __name__ == '__main__':
-    logging.basicConfig()
+    logging.basicConfig(level=logging.DEBUG)
     logger.info("Start TESTS")
     import unittest
     unittest.main()

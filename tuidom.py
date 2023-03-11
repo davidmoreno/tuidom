@@ -7,7 +7,7 @@ import shutil
 from dataclasses import dataclass, field
 import sys
 import tty
-from typing import List, Literal, Optional
+from typing import Callable, List, Literal, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -123,13 +123,14 @@ class Element:
     style: Optional[Style] = field(default_factory=Style)
     id: Optional[str] = None
     className: Optional[str] = None
+    on_focus: Callable | bool = False
 
     # these is set by the renderer
     parent: Optional['Element'] = None
     document: 'TuiRenderer' = None
     layout: Layout = field(default_factory=Layout)
 
-    def __init__(self, children=[], *, style=False, id=None, className=None):
+    def __init__(self, children=[], *, style=False, id=None, className=None, on_focus=False):
         super().__init__()
         self.children = children
         if not style:  # this allows to pass None or False
@@ -138,20 +139,10 @@ class Element:
         self.id = id
         self.layout = Layout()
         self.className = className
+        self.on_focus = on_focus
 
     def queryElement(self, query: str):
-        if query.startswith("#"):
-            if self.id and self.id == query[1:]:
-                return self
-        if query.startswith("."):
-            if self.className and any(x == query[1:] for x in self.className.split()):
-                return self
-
-        for x in self.children:
-            ret = x.queryElement(query)
-            if ret is not None:
-                return ret
-        return None
+        return self.document.queryElementCompiled(self, Query(query))
 
     def __str__(self) -> str:
         if self.id:
@@ -185,12 +176,64 @@ class Span(Element):
 
 @dataclass
 class Event:
-    pass
+    stopPropagation: bool = False
 
 
 @dataclass
-class KeyPress:
-    key: str
+class KeyPress(Event):
+    key: str = ""
+
+    def __init__(self, key):
+        self.key = key
+
+
+class Query:
+    id_selector: Optional[str] = None
+    class_selector: Optional[str] = None
+    pseudo_selector: Optional[str] = None
+
+    def __init__(self, query: str):
+        oquery = query
+        if query.startswith("#"):
+            sel = ""
+            for c in query[1:]:
+                if c in '.:':
+                    break
+                sel += c
+            self.id_selector = sel
+            query = query[1+len(sel):]
+        if query.startswith("."):
+            sel = ""
+            for c in query[1:]:
+                if c in ':':
+                    break
+                sel += c
+            self.class_selector = sel
+            query = query[1+len(sel):]
+        if query.startswith(":"):
+            self.pseudo_selector = query[1:]
+            query = query[1+len(query):]
+        if query:
+            logger.error("Invalid query: %s", oquery)
+
+    def match(self, node: Element):
+        matches = True
+        if self.id_selector and node.id != self.id_selector:
+            matches = False
+
+        if self.class_selector:
+            if not node.className or not any(x == self.class_selector for x in node.className.split()):
+                matches = False
+        if self.pseudo_selector:
+            match self.pseudo_selector:
+                case "focus":
+                    if node is not node.document.selected_element:
+                        matches = False
+                case _:
+                    logger.warning("Unknown pseudo selector: %s",
+                                   self.pseudo_selector)
+                    matches = False
+        return matches
 
 
 class TuiRenderer:
@@ -198,6 +241,7 @@ class TuiRenderer:
     height = 25
     document: Optional[Element] = None
     css = {}
+    selected_element = None
 
     def __init__(self, *, document=None, css=None):
         if document:
@@ -221,21 +265,31 @@ class TuiRenderer:
         return self
 
     def queryElement(self, query) -> Optional[Element]:
-        return self.document.queryElement(query)
+        return self.queryElementCompiled(self.document, Query(query))
 
-    def get_style(self, element: Element, key):
+    def queryElementCompiled(self, node, query: Query):
+        for node in self.preorder_traversal(node):
+            if query.match(node):
+                return node
+
+    def get_style(self, element: Element, key: str):
         ret = element.style and getattr(element.style, key)
         if ret is not None:
             return ret
 
+        pseudo = ["", ]
+        if self.selected_element is element:
+            pseudo.append(":focus")
+
         # basic one level CSS
         if element.className:
             ret = None
-            for className in element.className.split():
-                className = f".{className}"
-                css = self.css.get(className)
-                if css and key in css:
-                    ret = css[key]
+            for ps in pseudo:
+                for className in element.className.split():
+                    className = f".{className}{ps}"
+                    css = self.css.get(className)
+                    if css and key in css:
+                        ret = css[key]
             if ret:
                 return ret
 
@@ -431,6 +485,43 @@ class TuiRenderer:
             else:
                 left += child.layout.width
 
+    def handle_event(self, event: Event):
+        HANDLER_NAMES = {
+            KeyPress: "on_keypress",
+        }
+        handler_name = HANDLER_NAMES.get(event.__class__, "on_event")
+        if self.selected_element:
+            handler = getattr(self.selected_element, handler_name, None)
+            if handler:
+                handler(event)
+
+        if not event.stopPropagation:
+            handler = getattr(self, handler_name, None)
+            if handler:
+                handler(event)
+
+    def on_keypress(self, event: KeyPress):
+        if event.key == "TAB":
+            self.focus_next()
+
+    def preorder_traversal(self, node):
+        yield node
+        for child in node.children:
+            yield from self.preorder_traversal(child)
+
+    def focus_next(self):
+        for item in self.preorder_traversal(self.document):
+            if item.on_focus:
+                if self.selected_element is None:
+                    self.selected_element = item
+                    return item
+                elif self.selected_element is item:
+                    self.selected_element = None
+
+        # got nothing, ensure we reset to nothing
+        self.selected_element = None
+        return None
+
     def rgbcolor(self, color: str):
         if color.startswith("#"):
             return f"{int(color[1:3], 16)};{int(color[3:5], 16)};{int(color[5:7], 16)}"
@@ -478,7 +569,10 @@ class XtermRenderer(TuiRenderer):
         key = self.read_key()
         if 0 < ord(key) < 27:
             key = chr(ord(key) + ord('A') - 1)
-            key = f"CONTROL+{key}"
+            if key == "I":
+                key = "TAB"
+            else:
+                key = f"CONTROL+{key}"
             return KeyPress(key)
         return KeyPress(key.decode())
 

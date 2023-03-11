@@ -29,11 +29,7 @@ class WelcomeProps:
         self.status = str(ev)
 
 
-def MenuEntry(label: str, shortcut: str = "", selected: bool = False):
-    highlight = Style(
-        background="bg-tertiary",
-        color="text-tertiary"
-    )
+def MenuEntry(label: str, shortcut: str = ""):
     if shortcut:
         idx = label.index(shortcut)
         if idx == 0:
@@ -52,19 +48,18 @@ def MenuEntry(label: str, shortcut: str = "", selected: bool = False):
         ],
         Span(" ")
     ],
-        style=Style(flexDirection="row").union(
-        selected and highlight
-    )
+        className="menu_entry",
+        on_focus=True,
     )
 
 
 def MenuBar(props: WelcomeProps):
     return Div(
         [
-            MenuEntry("File", "F", selected="file" == props.menu),
-            MenuEntry("Edit", "E", selected="edit" == props.menu),
-            MenuEntry("Tools", "T", selected="tools" == props.menu),
-            MenuEntry("Exit", "x", selected="exit" == props.menu),
+            MenuEntry("File", "F"),
+            MenuEntry("Edit", "E"),
+            MenuEntry("Tools", "T"),
+            MenuEntry("Exit", "x"),
         ],
         style=Style(
             background="bg-secondary",
@@ -136,6 +131,13 @@ if __name__ == '__main__':
         ".border": {
             "borderStyle": "double",
         },
+        ".menu_entry": {
+            "flexDirection": "row",
+        },
+        ".menu_entry:focus": {
+            "background": "text-primary",
+            "color": "bg-primary",
+        },
         ".p-1": {
             "padding": 1,
         },
@@ -171,7 +173,6 @@ if __name__ == '__main__':
     else:
         props = WelcomeProps()
         while True:
-            renderer.set_document(Welcome(props))
             renderer.render()
             event = renderer.read_event()
-            props.handle_event(event)
+            renderer.handle_event(event)
