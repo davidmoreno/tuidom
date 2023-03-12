@@ -631,11 +631,9 @@ class XtermRenderer(TuiRenderer):
         fd = sys.stdin.fileno()
         termios.tcsetattr(fd, termios.TCSADRAIN, self.oldtermios)
 
-    def read_key(self):
-        return os.read(sys.stdin.fileno(), 1)
-
     def read_event(self):
-        key = self.read_key()
+        key = os.read(sys.stdin.fileno(), 1)
+
         if 0 < ord(key) < 27:
             key = chr(ord(key) + ord('A') - 1)
             if key == "I":
@@ -645,7 +643,7 @@ class XtermRenderer(TuiRenderer):
             else:
                 key = f"CONTROL+{key}"
             return KeyPress(key)
-        return KeyPress(key.decode())
+        return KeyPress(key.decode("iso8859-15"))
 
     def render(self, *, file=sys.stdout):
         self.calculate_layout()
