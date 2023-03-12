@@ -564,26 +564,31 @@ class TuiRenderer:
 
     def focus_next(self):
         for item in self.preorder_traversal(self.document):
-            item.pseudo = [x for x in item.pseudo if x != ":focus"]
-
-        for item in self.preorder_traversal(self.document):
             if item.on_focus:
                 if self.selected_element is None:
-                    self.selected_element = item
-
-                    parent = item
-                    while parent:
-                        parent.pseudo.append(":focus")
-                        parent = parent.parent
-
-                    self.handle_event(Focus())
+                    self.set_focus(item)
                     return item
                 elif self.selected_element is item:
-                    self.selected_element = None
+                    self.set_focus(None)
 
         # got nothing, ensure we reset to nothing
-        self.selected_element = None
+        self.set_focus(None)
         return None
+
+    def set_focus(self, item: Element):
+        parent = self.selected_element
+        while parent:
+            parent.pseudo = [x for x in parent.pseudo if x != ":focus"]
+            parent = parent.parent
+
+        self.selected_element = item
+
+        parent = item
+        while parent:
+            parent.pseudo.append(":focus")
+            parent = parent.parent
+
+        self.handle_event(Focus())
 
     def rgbcolor(self, color: str):
         if color.startswith("#"):

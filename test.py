@@ -62,12 +62,11 @@ class ClassNameTestCase(TestCase):
                     "color": "blue",
                     "background": "white",
                 },
-                ""
             }
         )
         file = dom.queryElement("#file")
         self.assertEqual(renderer.get_style(file, "color"), "white")
-        renderer.selected_element = file
+        renderer.set_focus(file)
         self.assertEqual(renderer.get_style(file, "color"), "blue")
 
 
@@ -201,6 +200,8 @@ class EventsTestCase(TestCase):
         sel = dom.queryElement("#a:focus")
         self.assertEqual(sel.id, "a")
 
+        sel = dom.queryElement("#b:focus")
+        self.assertIsNone(sel)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
