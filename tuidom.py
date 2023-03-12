@@ -191,8 +191,8 @@ class Span(Element):
 
     def __str__(self) -> str:
         if self.id:
-            return f"<{self.__class__.__name__.lower()}#{self.id}>{self.text}</{self.__class__.__name__.lower()}>"
-        return f"<{self.__class__.__name__.lower()}>{self.text}</{self.__class__.__name__.lower()}>"
+            return f"<{self.__class__.__name__.lower()}#{self.id}>{self.text[:10]}</{self.__class__.__name__.lower()}>"
+        return f"<{self.__class__.__name__.lower()}>{self.text[:10]}</{self.__class__.__name__.lower()}>"
 
     def __repr__(self) -> str:
         return str(self)
