@@ -143,6 +143,7 @@ class Element:
 
     # event handlers
     on_focus: Callable | bool = False
+    on_blur: Callable | bool = False
     on_click: Callable | bool = False
     on_keypress: Callable | bool = False
 
@@ -152,7 +153,7 @@ class Element:
     layout: Layout = field(default_factory=Layout)
     pseudo: list[str] = field(default_factory=list)
 
-    def __init__(self, children=[], *, style=False, id=None, className=None, on_focus=False, on_click=False):
+    def __init__(self, children=[], *, style=False, id=None, className=None, on_focus=False, on_blur=False, on_click=False):
         super().__init__()
         self.children = children
         if not style:  # this allows to pass None or False
@@ -163,6 +164,7 @@ class Element:
         self.className = className
         self.pseudo = []
         self.on_focus = on_focus
+        self.on_blur = on_focus
         self.on_click = on_click
 
     def queryElement(self, query: str):
@@ -185,7 +187,7 @@ class Div(Element):
 class Span(Element):
     text: str = ""
 
-    def __init__(self, text, *args, **kwargs):
+    def __init__(self, text="", *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.text = text
 
