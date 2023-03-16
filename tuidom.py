@@ -153,9 +153,9 @@ class Element:
     layout: Layout = field(default_factory=Layout)
     pseudo: list[str] = field(default_factory=list)
 
-    def __init__(self, children=[], *, style=False, id=None, className=None, on_focus=False, on_blur=False, on_click=False):
+    def __init__(self, children=None, *, style=False, id=None, className=None, on_focus=False, on_blur=False, on_click=False):
         super().__init__()
-        self.children = children
+        self.children = children or []
         if not style:  # this allows to pass None or False
             style = Style()
         self.style = style
@@ -174,6 +174,35 @@ class Element:
         if self.id:
             return f"<{self.__class__.__name__.lower()}#{self.id}>"
         return f"<{self.__class__.__name__.lower()}>"
+
+    def print(self, indent=0):
+        ws = " " * indent
+        props = self.props
+        if props:
+            props = f" {props}"
+        else:
+            props = ""
+        print(f"{ws}<{self.__class__.__name__.lower()}{props}>")
+        for child in self.children:
+            if child is self:
+                logger.error("ERROR REC. SELF IS CHILDREN.")
+                continue
+            if child is None:
+                logger.debug("Child is None! Should not happen!")
+                continue
+            child.print(indent+2)
+        print(f"{ws}</{self.__class__.__name__.lower()}>")
+
+    @property
+    def props(self):
+        ret = {}
+        for key in self.__annotations__.keys():
+            if key in ["children", "parent", "document", "layout", "style"]:
+                continue
+            val = getattr(self, key, None)
+            if val not in (None, False, []):
+                ret[key] = val
+        return ret
 
     def __repr__(self) -> str:
         return str(self)
