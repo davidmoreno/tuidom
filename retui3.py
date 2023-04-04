@@ -1,25 +1,72 @@
 #!/usr/bin/python3
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import itertools
+import logging
+import os
+import shutil
+import sys
+import termios
+import tty
+
+logger = logging.getLogger(__name__)
 
 
 class Renderer:
+    color = "white"
+    background = "blue"
+
     def setColor(self, color):
-        print("Color", color)
-        pass
+        self.color = color
 
     def setBackground(self, color):
-        print("BG", color)
-        pass
+        self.background = color
 
     def drawSquare(self, orig, size):
-        print("sq", orig, size)
+        logger.debug("sq %s %s", orig, size)
         pass
 
     def drawText(self, position, text):
-        print("TEXT", position, text)
+        print(text)
+        logger.debug("TEXT %s %s", position, text)
         pass
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        width, height = shutil.get_terminal_size()
+        self.width = width
+        self.height = height
+
+        fd = sys.stdin.fileno()
+        self.oldtermios = termios.tcgetattr(fd)
+        tty.setcbreak(fd)
+        new = termios.tcgetattr(fd)
+        new[3] = new[3] & ~(termios.ECHO | termios.ICANON)        # lflags
+        termios.tcsetattr(fd, termios.TCSADRAIN, new)
+
+        # save screen state
+        # print("\033[?1049h;")
+
+    def close(self):
+        # recover saved state
+        # print("\033[?1049l;")
+
+        fd = sys.stdin.fileno()
+        termios.tcsetattr(fd, termios.TCSADRAIN, self.oldtermios)
+
+    def readEvent(self):
+        key = os.read(sys.stdin.fileno(), 1)
+
+        if 0 < ord(key) < 27:
+            key = chr(ord(key) + ord('A') - 1)
+            if key == "I":
+                key = "TAB"
+            elif key == "J":
+                key = "ENTER"
+            else:
+                key = f"CONTROL+{key}"
+            return EventKeyPress(key)
+        return EventKeyPress(key.decode("iso8859-15"))
 
 
 def flatten_list(ml):
@@ -34,11 +81,9 @@ def flatten_list(ml):
 
 @dataclass
 class Event:
-    continuePropagation: bool = True
+    name: str
+    stopPropagation: bool = False
     target = None
-
-    def stopPropagation(self):
-        self.continuePropagation = False
 
 
 class EventClick(Event):
@@ -46,12 +91,13 @@ class EventClick(Event):
     position: tuple[int, int]
 
     def __init__(self, buttons: list[int], position: tuple[int, int]):
-        super().__init__()
+        super().__init__("click")
         self.buttons = buttons
         self.position = position
 
 
 class EventFocus(Event):
+    name = "focus"
     pass
 
 
@@ -59,11 +105,12 @@ class EventKeyPress(Event):
     keycode: str
 
     def __init__(self, keycode: str):
-        super().__init__()
+        super().__init__("keypress")
         self.keycode = keycode
 
 
 class Component:
+    serialid = 0  # jsut for debugging, to ensure materialize reuses as possible
     name = None
     children: list = None
     props: dict = None
@@ -78,11 +125,11 @@ class Component:
         return self.children
 
     def paint(self, renderer: Renderer):
-        print("paint", self)
+        logger.debug("paint %s", self)
         # if not self.__changed:
         #     return
         for child in self.__materialized_children:
-            print("paint child", child)
+            logger.debug("paint child %s", child)
             child.paint(renderer)
 
     def setChanged(self):
@@ -141,7 +188,7 @@ class Component:
 
             self.__materialized_children = nextchildren
 
-        print("Materialized", self.__materialized_children)
+        logger.debug("Materialized %s", self.__materialized_children)
         # rec materialize
         for child in self.__materialized_children:
             child.materialize()
@@ -168,21 +215,6 @@ class Component:
                 continue
             self.props[key] = val
 
-    def __init__(self, **props):
-        if not self.name:
-            self.name = self.__class__.__name__
-        self.props = props
-
-    def __getitem__(self, children: list):
-        self.children = children
-        return self
-
-    def __repr__(self):
-        if not self.children:
-            return f"<{self.name}/>"
-        else:
-            return f"<{self.name}>{self.children}</{self.name}>"
-
     def queryElement(self, query):
         if self.name == query:
             return self
@@ -191,38 +223,125 @@ class Component:
             if ret:
                 return ret
 
-    def on_event(self,  on_name, ev):
-        if not ev.target:
-            ev.target = self
+    def preorderTraversal(self):
+        yield self
+        for child in self.__materialized_children:
+            yield from child.preorderTraversal()
 
-        on_click = self.props.get(on_name)
-        if on_click:
-            on_click(ev)
-        if ev.continuePropagation and self.parent:
-            self.parent.on_event(on_name, ev)
+    def __init__(self, **props):
+        if not self.name:
+            self.name = self.__class__.__name__
+        self.props = props
+        Component.serialid += 1
+        self.serialid = Component.serialid
+        super().__init__()
 
-    def on_click(self, ev: EventClick):
-        self.on_event("on_click", ev)
+    def __getitem__(self, children: list):
+        self.children = children
+        return self
 
-    def on_focus(self, ev: EventFocus):
-        self.on_event("on_focus", ev)
+    def __repr__(self):
+        if not self.children:
+            return f"<{self.name} {self.serialid}/>"
+        else:
+            return f"<{self.name} {self.serialid}>{self.children}</{self.name}>"
 
 
 class Paintable(Component):
-    def getStyle(self, property: str):
+    """
+    This component can be painted with the given renderer
+    """
+
+    def getStyle(self, key: str) -> str | None:
+        """
+        Returns a style by key.
+
+        It might be search by classname or splicitly set
+        """
+        match key:
+            case "color":
+                return "white"
+            case "background":
+                return "blue"
         return None
 
     def paint(self, renderer: Renderer):
         color = self.getStyle("color")
         if color:
-            renderer.setColor("white")
+            renderer.setColor(color)
         background = self.getStyle("background")
         if background:
-            renderer.setBackground("blue")
+            renderer.setBackground(background)
             renderer.drawSquare(
                 (0, 0), (10, 10),
             )
         super().paint(renderer)
+
+
+class Document(Component):
+    """
+    A component with some extra methods
+    """
+    currentFocusedElement = None
+    root = None
+
+    def __init__(self, root=None):
+        super().__init__()
+        if root:
+            self.children = [root]
+            self.root = root
+        self.props = {
+            "on_keypress": self.on_keypress,
+        }
+
+    def setRoot(self, root):
+        self.root = root
+        self.children = [root]
+
+    def is_focusable(self, el):
+        for key in el.props.keys():
+            if key.startswith("on_"):
+                return True
+        return False
+
+    def nextFocus(self):
+        prev = self.currentFocusedElement
+        for child in self.root.preorderTraversal():
+            if self.is_focusable(child):
+                if prev is None:
+                    self.currentFocusedElement = child
+                    return child
+                else:
+                    prev = None
+        self.currentFocusedElement = False
+        return None
+
+    def on_keypress(self, event: EventKeyPress):
+        if event.keycode == "TAB":
+            self.nextFocus()
+        if event.keycode == "ENTER":
+            self.on_event(EventClick([1], (0, 0)))
+
+    def on_event(self, ev: Event):
+        name = ev.name
+        if not ev.target:
+            item = self.currentFocusedElement
+            if not item:
+                item = self
+            ev.target = item
+        else:
+            item = ev.target
+
+        while item:
+            event_handler = item.props.get(f"on_{name}")
+            logger.debug(f"Event {name} on {item}: {event_handler}")
+            if event_handler:
+                event_handler(ev)
+            if ev.stopPropagation:
+                return
+            item = item.parent
+
+        # not handled
 
 
 class Text(Component):
@@ -271,19 +390,20 @@ class App(Component):
         ]
 
 
-renderer = Renderer()
+def main():
+    logging.basicConfig(level=logging.DEBUG)
+    renderer = Renderer()
 
-root = App()
-root.materialize()
-root.paint(renderer)
+    root = Document(App())
 
-ev = EventClick([1], (10, 10))
-root.queryElement("CheckBox").on_click(ev)
+    while True:
+        logger.debug("\nMaterialize:")
+        root.materialize()
+        logger.debug("\nRender:")
+        root.paint(renderer)
+        logger.debug("\nEvent:")
+        root.on_event(renderer.readEvent())
 
-print()
 
-root.materialize()
-root.paint(renderer)
-
-# print(span().render())
-# span().paint(renderer)
+if __name__ == '__main__':
+    main()
