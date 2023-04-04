@@ -147,6 +147,10 @@ class Component:
         self.setChanged()
 
     def normalize(self, node):
+        """
+        Helper to return always some component, normally translating
+        strings to Text nodes.
+        """
         if isinstance(node, Component):
             return node
         if isinstance(node, (str, int, float)):
@@ -174,12 +178,15 @@ class Component:
             self.__materialized_children = children
         else:
             nextchildren = []
-            for left, right in itertools.zip_longest(children,  self.__materialized_children):
+            for left, right in itertools.zip_longest(self.__materialized_children, children):
                 # print("materialize iseq", left, right)
                 if self.isEquivalent(left, right):
+                    logger.debug("Materialize reconcile: %s ~ %s", left, right)
                     left.updateProps(right)
                     nextchildren.append(left)
                 else:
+                    logger.debug(
+                        "Materialize reconcile: %s != %s", left, right)
                     nextchildren.append(right)
 
             for child in nextchildren:
@@ -188,7 +195,8 @@ class Component:
 
             self.__materialized_children = nextchildren
 
-        logger.debug("Materialized %s", self.__materialized_children)
+        logger.debug("Materialized %s -> %s", self,
+                     self.__materialized_children)
         # rec materialize
         for child in self.__materialized_children:
             child.materialize()
@@ -204,6 +212,7 @@ class Component:
         return False
 
     def updateProps(self, other):
+        logger.debug("Update props: %s from %s", self.props, other.props)
         for key, val in other.props.items():
             oldval = self.props.get(key)
             if not oldval:
@@ -212,7 +221,9 @@ class Component:
             if oldval == val:
                 continue
             if key[:3] == "on_":
+                logger.debug("Do not replace on_ props: %s", key)
                 continue
+            logger.debug("Replace props: %s", key)
             self.props[key] = val
 
     def queryElement(self, query):
@@ -242,9 +253,9 @@ class Component:
 
     def __repr__(self):
         if not self.children:
-            return f"<{self.name} {self.serialid}/>"
+            return f"<{self.name} {self.serialid} {self.state}/>"
         else:
-            return f"<{self.name} {self.serialid}>{self.children}</{self.name}>"
+            return f"<{self.name} {self.serialid} {self.state}>{self.children}</{self.name}>"
 
 
 class Paintable(Component):
@@ -283,20 +294,21 @@ class Document(Component):
     A component with some extra methods
     """
     currentFocusedElement = None
-    root = None
 
     def __init__(self, root=None):
         super().__init__()
         if root:
             self.children = [root]
-            self.root = root
         self.props = {
             "on_keypress": self.on_keypress,
         }
 
     def setRoot(self, root):
-        self.root = root
         self.children = [root]
+
+    @property
+    def root(self):
+        return self.children[0]
 
     def is_focusable(self, el):
         for key in el.props.keys():
@@ -306,14 +318,17 @@ class Document(Component):
 
     def nextFocus(self):
         prev = self.currentFocusedElement
+        logger.debug("Current focus is %s", prev)
         for child in self.root.preorderTraversal():
             if self.is_focusable(child):
                 if prev is None:
+                    logger.debug("Set focus on %s", child)
                     self.currentFocusedElement = child
                     return child
-                else:
+                elif prev is child:
                     prev = None
-        self.currentFocusedElement = False
+        logger.debug("Lost focus")
+        self.currentFocusedElement = None
         return None
 
     def on_keypress(self, event: EventKeyPress):
