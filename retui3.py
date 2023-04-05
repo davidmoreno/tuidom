@@ -69,7 +69,7 @@ class Renderer:
         return EventKeyPress(key.decode("iso8859-15"))
 
 
-def flatten_list(ml):
+def ensure_list(ml):
     """
     Actually it coud be a list of lists, or a simple
     element. But ensure always a list of simple elements
@@ -109,6 +109,10 @@ class EventKeyPress(Event):
         self.keycode = keycode
 
 
+class HandleEventTrait:
+    pass
+
+
 class Component:
     serialid = 0  # jsut for debugging, to ensure materialize reuses as possible
     name = None
@@ -140,58 +144,49 @@ class Component:
             self.parent.setChanged()
 
     def setState(self, update):
+        logger.debug("Update state %s: %s", self, update)
         if self.state is None:
             self.state = {}
 
         self.state = {**self.state, **update}
         self.setChanged()
 
-    def normalize(self, node):
+    def normalize(self, nodes):
         """
         Helper to return always some component, normally translating
         strings to Text nodes.
         """
-        if isinstance(node, Component):
-            return node
-        if isinstance(node, (str, int, float)):
-            return Text(text=str(node))
-        if node is True:
-            return Text(text=True)
-        return None
+        if not isinstance(nodes, (list, tuple)):
+            nodes = [nodes]
+        ret = []
+        for item in nodes:
+            if isinstance(item, Component):
+                item.children = self.normalize(item.children)
+                ret.append(item)
+            elif item is True:
+                ret.append(Text(text=True))
+            elif item is False or item is None:
+                continue  # skip Falses and Nones
+            else:
+                ret.append(Text(text=str(item)))
+        return ret
 
     def materialize(self):
         if not self.__changed:
             return
 
-        children = flatten_list(self.render())
-        children = [
-            self.normalize(x)
-            for x in children
-        ]
-        children = [
-            x for x in children if x
-        ]
+        children = self.normalize(self.render())
 
         if self.__materialized_children is None:
             for child in children:
                 child.parent = self
             self.__materialized_children = children
         else:
-            nextchildren = []
-            for left, right in itertools.zip_longest(self.__materialized_children, children):
-                # print("materialize iseq", left, right)
-                if self.isEquivalent(left, right):
-                    logger.debug("Materialize reconcile: %s ~ %s", left, right)
-                    left.updateProps(right)
-                    nextchildren.append(left)
-                else:
-                    logger.debug(
-                        "Materialize reconcile: %s != %s", left, right)
-                    nextchildren.append(right)
-
-            for child in nextchildren:
-                if child.parent != self:
-                    child.parent = self
+            nextchildren = self.reconcile(
+                self,
+                self.__materialized_children,
+                children
+            )
 
             self.__materialized_children = nextchildren
 
@@ -200,6 +195,32 @@ class Component:
         # rec materialize
         for child in self.__materialized_children:
             child.materialize()
+
+    def reconcile(self, parent, leftchildren, rightchildren):
+        logger.debug("Reconcile two lists: %s <-> %s",
+                     leftchildren, rightchildren)
+        nextchildren = []
+        for left, right in itertools.zip_longest(leftchildren, rightchildren):
+            # print("materialize iseq", left, right)
+            logger.debug("is eq: %s %s", left, right)
+            if self.isEquivalent(left, right):
+                logger.debug("Materialize reconcile: %s ~ %s", left, right)
+                left.updateProps(right)
+                nextchildren.append(left)
+            else:
+                logger.debug(
+                    "Materialize reconcile: %s != %s", left, right)
+                nextchildren.append(right)
+            left.children = self.reconcile(
+                left,
+                left.children or [],
+                right.children or [],
+            )
+
+        for child in nextchildren:
+            if child.parent != parent:
+                child.parent = parent
+        return nextchildren
 
     def isEquivalent(self, left, right):
         if not left or not right:
@@ -212,7 +233,8 @@ class Component:
         return False
 
     def updateProps(self, other):
-        logger.debug("Update props: %s from %s", self.props, other.props)
+        logger.debug("%s Update props: %s from %s",
+                     self, self.props, other.props)
         for key, val in other.props.items():
             oldval = self.props.get(key)
             if not oldval:
@@ -253,12 +275,12 @@ class Component:
 
     def __repr__(self):
         if not self.children:
-            return f"<{self.name} {self.serialid} {self.state}/>"
+            return f"<{self.name} {self.serialid} {self.props}/>"
         else:
-            return f"<{self.name} {self.serialid} {self.state}>{self.children}</{self.name}>"
+            return f"<{self.name} {self.serialid} {self.props}>{self.children}</{self.name}>"
 
 
-class Paintable(Component):
+class Paintable(HandleEventTrait, Component):
     """
     This component can be painted with the given renderer
     """
@@ -289,7 +311,7 @@ class Paintable(Component):
         super().paint(renderer)
 
 
-class Document(Component):
+class Document(HandleEventTrait, Component):
     """
     A component with some extra methods
     """
@@ -311,6 +333,8 @@ class Document(Component):
         return self.children[0]
 
     def is_focusable(self, el):
+        if not isinstance(el, HandleEventTrait):
+            return False
         for key in el.props.keys():
             if key.startswith("on_"):
                 return True
@@ -348,12 +372,13 @@ class Document(Component):
             item = ev.target
 
         while item:
-            event_handler = item.props.get(f"on_{name}")
-            logger.debug(f"Event {name} on {item}: {event_handler}")
-            if event_handler:
-                event_handler(ev)
-            if ev.stopPropagation:
-                return
+            if isinstance(item, HandleEventTrait):
+                event_handler = item.props.get(f"on_{name}")
+                logger.debug(f"Event {name} on {item}: {event_handler}")
+                if event_handler:
+                    event_handler(ev)
+                if ev.stopPropagation:
+                    return
             item = item.parent
 
         # not handled
@@ -379,6 +404,7 @@ span.__name__ = "span"
 
 class CheckBox(Component):
     def render(self):
+        logger.debug("Render Checkbox %s: %s", self, self.props)
         return (
             span(
                 on_click=self.props["on_click"]
@@ -394,6 +420,7 @@ class App(Component):
     }
 
     def render(self):
+        print("RENDER APP", self, self.state)
         return div(className="flex-row")[
             "Toggle",
             CheckBox(
@@ -401,7 +428,7 @@ class App(Component):
                 on_click=lambda ev: self.setState(
                     {"is_on": not self.state["is_on"]}
                 )
-            )
+            ),
         ]
 
 
