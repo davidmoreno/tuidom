@@ -78,3 +78,9 @@ class Document(HandleEventTrait, Component):
             item = item.parent
 
         # not handled
+
+    def paint(self, renderer):
+        renderer.setBackground("blue")
+        renderer.setColor("white")
+        renderer.drawSquare((0, 0), renderer.size)
+        super().paint(renderer)
