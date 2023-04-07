@@ -20,21 +20,21 @@ class Document(HandleEventTrait, Component):
 
     def __init__(self, root: Component = None):
         super().__init__()
-        if root:
-            root.document = self
-            self.children = [root]
         self.props = {
             "on_keypress": self.on_keypress,
         }
+        if root:
+            root.document = self
+            self.props["children"] = [root]
         self.document = self
 
     def setRoot(self, root: Component):
         root.document = self
-        self.children = [root]
+        self.props["children"] = [root]
 
     @property
     def root(self):
-        return self.children[0]
+        return self.props["children"][0]
 
     def is_focusable(self, el):
         if not isinstance(el, HandleEventTrait):

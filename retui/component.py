@@ -35,16 +35,15 @@ class Layout:
 class Component:
     serialid = 0  # just for debugging, to ensure materialize reuses as possible
     name = None
-    children: list = None
     props: dict = None
     state: dict = None
     parent = None
     document = None
     key = None
     layout: Layout = None
+    children: list = None
 
     __changed: bool = True
-    __materialized_children: list = None
 
     def __init__(self, **props):
         if not self.name:
@@ -56,23 +55,24 @@ class Component:
         super().__init__()
 
     def __getitem__(self, children: list):
-        self.children = children
+        self.props["children"] = children
         return self
 
     def __repr__(self):
-        if not self.children:
+        children = self.props.get("children")
+        if not children:
             return f"<{self.name} {self.serialid} {self.props}/>"
         else:
-            return f"<{self.name} {self.serialid} {self.props}>{self.children}</{self.name}>"
+            return f"<{self.name} {self.serialid} {self.props}>{children}</{self.name}>"
 
     def render(self):
-        return self.children
+        return self.props.get("children", [])
 
     def paint(self, renderer: Renderer):
         logger.debug("paint %s", self)
         # if not self.__changed:
         #     return
-        for child in self.__materialized_children:
+        for child in self.children:
             logger.debug("paint child %s", child)
             child.paint(renderer)
 
@@ -101,7 +101,9 @@ class Component:
         ret = []
         for item in nodes:
             if isinstance(item, Component):
-                item.children = self.normalize(item.children)
+                item.props["children"] = self.normalize(
+                    item.props.get("children", [])
+                )
                 ret.append(item)
             elif item is True:
                 ret.append(Text(text=True))
@@ -117,24 +119,24 @@ class Component:
 
         children = self.normalize(self.render())
 
-        if self.__materialized_children is None:
+        if self.children is None:
             for child in children:
                 child.parent = self
                 child.document = self.document
-            self.__materialized_children = children
+            self.children = children
         else:
             nextchildren = self.reconcile(
                 self,
-                self.__materialized_children,
+                self.children,
                 children
             )
 
-            self.__materialized_children = nextchildren
+            self.children = nextchildren
 
         logger.debug("Materialized %s -> %s", self,
-                     self.__materialized_children)
+                     self.children)
         # rec materialize
-        for child in self.__materialized_children:
+        for child in self.children:
             child.materialize()
 
     def reconcile(self, parent, leftchildren, rightchildren):
@@ -152,10 +154,10 @@ class Component:
                 logger.debug(
                     "Materialize reconcile: %s != %s", left, right)
                 nextchildren.append(right)
-            left.children = self.reconcile(
+            left.props["children"] = self.reconcile(
                 left,
-                left.children or [],
-                right.children or [],
+                left.props.get("children") or [],
+                right.props.get("children") or [],
             )
 
         for child in nextchildren:
@@ -193,14 +195,14 @@ class Component:
     def queryElement(self, query):
         if self.matchCssSelector(query):
             return self
-        for child in self.__materialized_children:
+        for child in self.children:
             ret = child.queryElement(query)
             if ret:
                 return ret
 
     def preorderTraversal(self):
         yield self
-        for child in self.__materialized_children:
+        for child in self.children:
             yield from child.preorderTraversal()
 
     def getStyle(self, csskey: StyleProperty):
@@ -295,8 +297,8 @@ class Component:
     def calculateLayoutSizesVertical(self, min_width, min_height, max_width, max_height):
         width = 0
         height = 0
-        for children in self.__materialized_children:
-            cwidth, cheight = children.calculateLayoutSizes(
+        for child in self.children:
+            cwidth, cheight = child.calculateLayoutSizes(
                 min_width, min_height, max_width, max_height)
             width = max(cwidth, width)
             height += cheight
@@ -305,8 +307,8 @@ class Component:
     def calculateLayoutSizesHorizontal(self, min_width, min_height, max_width, max_height):
         width = 0
         height = 0
-        for children in self.__materialized_children:
-            cwidth, cheight = children.calculateLayoutSizes(
+        for child in self.children:
+            cwidth, cheight = child.calculateLayoutSizes(
                 min_width, min_height, max_width, max_height)
             width += cwidth
             height = max(cheight, height)
@@ -321,7 +323,7 @@ class Component:
         y = self.layout.y
         # print(self, x, y)
         child: Component
-        for child in self.__materialized_children:
+        for child in self.children:
             child.layout.y = y
             child.layout.x = x
             child.calculateLayoutPosition()
