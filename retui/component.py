@@ -191,7 +191,7 @@ class Component:
             self.props[key] = val
 
     def queryElement(self, query):
-        if self.name == query:
+        if self.matchCssSelector(query):
             return self
         for child in self.__materialized_children:
             ret = child.queryElement(query)
