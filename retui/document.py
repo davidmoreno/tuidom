@@ -80,7 +80,7 @@ class Document(HandleEventTrait, Component):
         # not handled
 
     def paint(self, renderer):
-        renderer.setBackground("blue")
-        renderer.setColor("white")
-        renderer.drawSquare((0, 0), renderer.size)
+        renderer.fillStyle = "bg"
+        renderer.strokeStyle = "fg"
+        renderer.fillRect(0, 0, renderer.width, renderer.height)
         super().paint(renderer)

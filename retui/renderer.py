@@ -7,26 +7,36 @@ logger = logging.getLogger(__name__)
 
 
 class Renderer:
-    color = "white"
-    background = "blue"
-    size = (25, 80)
+    """
+    Base class for all renderers. 
 
-    def setColor(self, color):
-        self.color = defaults.COLORS[color]
+    Must implement all drawing functions. 
 
-    def setBackground(self, color):
-        self.background = defaults.COLORS[color]
+    Will call close before exit.
 
-    def drawSquare(self, orig, size):
+    The renderer is also in charge of reading events, 
+    as keystrokes, mouse clicks and so on.
+    """
+    strokeStyle = "white"
+    fillStyle = "blue"
+    lineWidth = 1  # depending on width the stroke will use diferent unicode chars
+
+    width = 80
+    height = 25
+
+    def fillRect(self, x, y, width, height):
         """
         Orig is (width, height). All pairs are like this: (x, y).
         """
-        logger.debug("sq %s %s", orig, size)
+        logger.debug("sq %s %s", (x, y), (width, height))
         pass
 
-    def drawText(self, position, text):
+    def fillStroke(self, x, y, width, height):
+        raise NotImplementedError("WIP")
+
+    def fillText(self, text, x, y):
         print(text)
-        logger.debug("TEXT %s %s", position, text)
+        logger.debug("TEXT %s %s", (x, y), text)
         pass
 
     def close(self):

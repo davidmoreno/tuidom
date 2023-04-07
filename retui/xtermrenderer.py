@@ -6,13 +6,19 @@ import tty
 
 from .events import EventKeyPress
 from .renderer import Renderer
+from .defaults import COLORS
 
 
 class XtermRenderer(Renderer):
+    """
+    Implementation for Xterm
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         width, height = shutil.get_terminal_size()
-        self.size = (width, height)
+        self.width = width
+        self.height = height
 
         fd = sys.stdin.fileno()
         self.oldtermios = termios.tcgetattr(fd)
@@ -51,34 +57,49 @@ class XtermRenderer(Renderer):
             return EventKeyPress(key)
         return EventKeyPress(key.decode("iso8859-15"))
 
-    def drawText(self, position, text):
+    def rgbcolor(self, color: str):
+        """
+        From any color string to the xterm ; separated color components
+        """
+        if color.startswith("#"):
+            return f"{int(color[1:3], 16)};{int(color[3:5], 16)};{int(color[5:7], 16)}"
+        if color in COLORS:
+            color = COLORS[color]
+            if isinstance(color, tuple):
+                return ';'.join(map(str, color))
+            if color.startswith("#"):
+                return f"{int(color[1:3], 16)};{int(color[3:5], 16)};{int(color[5:7], 16)}"
+
+        return ';'.join(map(str, COLORS["black"]))
+
+    def __set_color(self):
+        return f"\033[48;2;{self.rgbcolor(self.fillStyle)}m\033[38;2;{self.rgbcolor(self.strokeStyle)}m"
+
+    def fillText(self, text, x, y):
         for lineno, line in enumerate(text.split("\n")):
             self.print(
-                f"\033[{position[1]+lineno};{position[0]}H",  # position
+                self.__set_color(),
+                f"\033[{y+lineno};{x}H",  # position
                 line
             )
 
-    def setBackground(self, color):
-        super().setBackground(color)
-        self.background = ';'.join(str(x) for x in self.background)
-        self.print(f"\033[48;2;{self.background}")
-
-    def setColor(self, color):
-        super().setColor(color)
-        self.color = ';'.join(str(x) for x in self.color)
-        self.print(f"m\033[38;2;{self.color}m")
-
-    def drawSquare(self, orig, size):
+    def fillRect(self, x, y, width, height):
         self.print(
+            self.__set_color(),
             [
-                # colors
                 [
-                    f"\033[{top};{orig[1]}H",  # position
-                    " "*size[1],  # write bg lines
+                    f"\033[{top};{x}H",  # position
+                    " "*width,  # write bg lines
                 ]
-                for top in range(orig[0], orig[0] + size[0])
+                for top in range(y, y + height)
             ]
         )
+
+    def strokeRect(self, x, y, width, height):
+        """
+        Draw rects with border
+        """
+        raise NotImplemented("WIP")
 
 
 def strlist_to_str(strl):

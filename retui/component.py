@@ -195,12 +195,12 @@ class Paintable(HandleEventTrait, Component):
     def paint(self, renderer: Renderer):
         color = self.getStyle("color")
         if color:
-            renderer.setColor(color)
+            renderer.strokeStyle = color
         background = self.getStyle("background")
         if background:
-            renderer.setBackground(background)
-            renderer.drawSquare(
-                (0, 0), (10, 10),
+            renderer.fillStyle = background
+            renderer.fillRect(
+                0, 0, 10, 10,
             )
         super().paint(renderer)
 
@@ -209,9 +209,9 @@ class Text(Component):
     def paint(self, renderer: Renderer):
         text = self.props.get("text")
         if text:
-            renderer.drawText(
-                (5, 5),
-                str(text)
+            renderer.fillText(
+                str(text),
+                5, 5,
             )
 
 
