@@ -1,6 +1,8 @@
 
 import logging
 
+from retui import defaults
+
 from .events import EventClick, EventKeyPress, Event, HandleEventTrait
 from .component import Component
 
@@ -12,16 +14,21 @@ class Document(HandleEventTrait, Component):
     A component with some extra methods
     """
     currentFocusedElement = None
+    name = "body"
+    css = defaults.DEFAULT_CSS
 
-    def __init__(self, root=None):
+    def __init__(self, root: Component = None):
         super().__init__()
         if root:
+            root.document = self
             self.children = [root]
         self.props = {
             "on_keypress": self.on_keypress,
         }
+        self.document = self
 
-    def setRoot(self, root):
+    def setRoot(self, root: Component):
+        root.document = self
         self.children = [root]
 
     @property
@@ -80,7 +87,7 @@ class Document(HandleEventTrait, Component):
         # not handled
 
     def paint(self, renderer):
-        renderer.fillStyle = "bg"
-        renderer.strokeStyle = "fg"
+        renderer.fillStyle = self.getStyle("background")
+        renderer.strokeStyle = self.getStyle("color")
         renderer.fillRect(0, 0, renderer.width, renderer.height)
         super().paint(renderer)

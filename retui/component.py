@@ -1,23 +1,60 @@
 
 
+from dataclasses import dataclass
 import itertools
 import logging
+from typing import Literal
 from .events import HandleEventTrait
 from .renderer import Renderer
 logger = logging.getLogger(__name__)
 
 
+StyleProperty = Literal["color", "background", "flex-direction", "flex-grow"]
+
+# this styles are checked against parents if not defined
+INHERITABLE_STYLES = ["color", "background"]
+
+
+@dataclass
+class Layout:
+    x: int = 0
+    y: int = 0
+    width: int = 0
+    height: int = 0
+
+
 class Component:
-    serialid = 0  # jsut for debugging, to ensure materialize reuses as possible
+    serialid = 0  # just for debugging, to ensure materialize reuses as possible
     name = None
     children: list = None
     props: dict = None
     state: dict = None
     parent = None
+    document = None
     key = None
+    layout: Layout = None
 
     __changed: bool = True
     __materialized_children: list = None
+
+    def __init__(self, **props):
+        if not self.name:
+            self.name = self.__class__.__name__
+        self.props = props
+        Component.serialid += 1
+        self.serialid = Component.serialid
+        self.layout = Layout()
+        super().__init__()
+
+    def __getitem__(self, children: list):
+        self.children = children
+        return self
+
+    def __repr__(self):
+        if not self.children:
+            return f"<{self.name} {self.serialid} {self.props}/>"
+        else:
+            return f"<{self.name} {self.serialid} {self.props}>{self.children}</{self.name}>"
 
     def render(self):
         return self.children
@@ -74,6 +111,7 @@ class Component:
         if self.__materialized_children is None:
             for child in children:
                 child.parent = self
+                child.document = self.document
             self.__materialized_children = children
         else:
             nextchildren = self.reconcile(
@@ -114,6 +152,7 @@ class Component:
         for child in nextchildren:
             if child.parent != parent:
                 child.parent = parent
+                child.document = self.document
         return nextchildren
 
     def isEquivalent(self, left, right):
@@ -155,42 +194,47 @@ class Component:
         for child in self.__materialized_children:
             yield from child.preorderTraversal()
 
-    def __init__(self, **props):
-        if not self.name:
-            self.name = self.__class__.__name__
-        self.props = props
-        Component.serialid += 1
-        self.serialid = Component.serialid
-        super().__init__()
+    def getStyle(self, csskey: StyleProperty):
+        print("get ", csskey, "from", self)
+        style = self.props.get("style")
+        if style:
+            value = style.get(csskey)
+            if value:
+                return value
 
-    def __getitem__(self, children: list):
-        self.children = children
-        return self
+        for selector, style in self.document.css.items():
+            if self.matchCssSelector(selector):
+                value = style.get(csskey)
+                if value:
+                    return value
+        if csskey in INHERITABLE_STYLES and self.parent:
+            return self.parent.getStyle(csskey)
 
-    def __repr__(self):
-        if not self.children:
-            return f"<{self.name} {self.serialid} {self.props}/>"
-        else:
-            return f"<{self.name} {self.serialid} {self.props}>{self.children}</{self.name}>"
+        return None
+
+    def matchCssSelector(self, selector: str) -> bool:
+        """
+        Very simple selectors. Simple classnames, type and ids. Not nested.
+        """
+        if selector == self.name:
+            return True
+        if selector.startswith("."):
+            class_name = self.props.get("className")
+            if class_name:
+                class_name = class_name.split(" ")
+                if selector[1:] in class_name:
+                    return True
+        if selector.startswith("#"):
+            id = self.props.get("id")
+            if id and id == selector[1:]:
+                return True
+        return False
 
 
 class Paintable(HandleEventTrait, Component):
     """
     This component can be painted with the given renderer
     """
-
-    def getStyle(self, key: str) -> str | None:
-        """
-        Returns a style by key.
-
-        It might be search by classname or splicitly set
-        """
-        match key:
-            case "color":
-                return "white"
-            case "background":
-                return "blue"
-        return None
 
     def paint(self, renderer: Renderer):
         color = self.getStyle("color")
@@ -200,7 +244,7 @@ class Paintable(HandleEventTrait, Component):
         if background:
             renderer.fillStyle = background
             renderer.fillRect(
-                0, 0, 10, 10,
+                0, 0, 20, 10,
             )
         super().paint(renderer)
 
