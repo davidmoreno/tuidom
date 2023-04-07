@@ -1,7 +1,12 @@
-from retui import component
+from retui.component import Paintable, Text
+
+div = Paintable
+div.__name__ = "div"
+span = Paintable
+span.__name__ = "span"
 
 
-class MenuBar(component.Component):
+class header(Paintable):
     """
     Just uses the widget name for classes. Children are the children.
 
@@ -11,7 +16,7 @@ class MenuBar(component.Component):
     pass
 
 
-class Menu(component.Component):
+class select(Paintable):
     state = {
         "open": False
     }
@@ -21,22 +26,22 @@ class Menu(component.Component):
 
     def render(self):
         if self.state["open"]:
-            return component.Text(
+            return Text(
                 on_click=self.handleOpenClose, text=f"*{self.props.get('label')}*"
             )
         else:
-            return component.Text(
-                on_click=self.handleOpenClose, text=self.props.get("label")
+            return Text(
+                on_click=self.handleOpenClose, text=f" {self.props.get('label')} "
             )
 
 
-class MenuItem(component.Component):
+class option(Paintable):
     pass
 
 
-class Body(component.Component):
+class Body(Paintable):
     pass
 
 
-class Footer(component.Component):
+class footer(Paintable):
     pass

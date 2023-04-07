@@ -2,8 +2,8 @@
 
 import logging
 
-from retui import Component, Document, XtermRenderer, div, span
-from retui.widgets import Body, Footer, Menu, MenuBar, MenuItem
+from retui import Component, Document, XtermRenderer
+from retui.widgets import Body, footer, select, header, option, div, span
 
 logger = logging.getLogger("main")
 
@@ -23,20 +23,21 @@ class CheckBox(Component):
 class App(Component):
     state = {
         "is_on": True,
+        "keypress": None,
     }
 
     def render(self):
         return [
-            MenuBar()[
-                Menu(label="File")[
-                    MenuItem()["Open..."],
-                    MenuItem()["Close"],
-                    MenuItem()["Quit"],
+            header(on_keypress=lambda ev: self.setState({"keypress": ev}))[
+                select(label="File")[
+                    option()["Open..."],
+                    option()["Close"],
+                    option()["Quit"],
                 ],
-                Menu(label="Edit")[
-                    MenuItem()["Copy"],
-                    MenuItem()["Paste"],
-                    MenuItem()["Cut"],
+                select(label="Edit")[
+                    option()["Copy"],
+                    option()["Paste"],
+                    option()["Cut"],
                 ]
             ],
             Body()[
@@ -49,7 +50,8 @@ class App(Component):
                         )
                     )],
             ],
-            Footer()["(C) 2023 | Coralbits SL"],
+            footer()["(C) 2023 | Coralbits SL | ",
+                     str(self.state["keypress"])],
         ]
 
 

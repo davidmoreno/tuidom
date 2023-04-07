@@ -7,6 +7,7 @@ import tty
 from .events import EventKeyPress
 from .renderer import Renderer
 from .defaults import COLORS
+from retui import defaults
 
 
 class XtermRenderer(Renderer):
@@ -25,16 +26,26 @@ class XtermRenderer(Renderer):
         self.width = width
         # TODO Fix last row can not be fill until the end or does a CR
         self.height = height - 1
+        self.captureKeyboard(True)
 
-        fd = self.stdin.fileno()
-        self.oldtermios = termios.tcgetattr(fd)
-        tty.setcbreak(fd)
-        new = termios.tcgetattr(fd)
-        new[3] = new[3] & ~(termios.ECHO | termios.ICANON)        # lflags
-        termios.tcsetattr(fd, termios.TCSADRAIN, new)
+    def captureKeyboard(self, is_on):
+        if is_on:
+            fd = self.stdin.fileno()
+            self.oldtermios = termios.tcgetattr(fd)
+            tty.setcbreak(fd)
+            new = termios.tcgetattr(fd)
+            new[3] = new[3] & ~(termios.ECHO | termios.ICANON)        # lflags
+            termios.tcsetattr(fd, termios.TCSADRAIN, new)
+        else:
+            fd = self.stdin.fileno()
+            termios.tcsetattr(fd, termios.TCSADRAIN, self.oldtermios)
 
+    def pushScreen(self):
         # save screen state
         print("\033[?1049h;")
+
+    def popScreen(self):
+        print("\033[?1049l;")
 
     def print(self, *str_or_list):
         """
@@ -47,24 +58,25 @@ class XtermRenderer(Renderer):
 
     def close(self):
         # recover saved state
-        print("\033[?1049l;")
-
-        fd = self.stdin.fileno()
-        termios.tcsetattr(fd, termios.TCSADRAIN, self.oldtermios)
+        self.popScreen()
+        self.captureKeyboard(False)
 
     def readEvent(self):
-        key = os.read(self.stdin.fileno(), 1)
+        key = os.read(self.stdin.fileno(), 10)
+        if key in defaults.XTERM_KEYCODES:
+            key = defaults.XTERM_KEYCODES[key]
 
-        if 0 < ord(key) < 27:
-            key = chr(ord(key) + ord('A') - 1)
-            if key == "I":
-                key = "TAB"
-            elif key == "J":
-                key = "ENTER"
+        elif len(key) == 1:
+            if 0 < ord(key) < 27:
+                ckey = chr(ord(key) + ord('A') - 1)
+                if ckey == "I":
+                    key = "TAB"
+                elif ckey == "J":
+                    key = "ENTER"
             else:
-                key = f"CONTROL+{key}"
-            return EventKeyPress(key)
-        return EventKeyPress(key.decode("iso8859-15"))
+                key = key.decode("iso8859-15")
+
+        return EventKeyPress(key)
 
     def rgbcolor(self, color: str):
         """
@@ -115,6 +127,13 @@ class XtermRenderer(Renderer):
         Draw rects with border
         """
         raise NotImplemented("WIP")
+
+    def breakpoint(self):
+        self.pushScreen()
+        self.captureKeyboard(False)
+        breakpoint()
+        self.popScreen()
+        self.captureKeyboard(True)
 
 
 def strlist_to_str(strl):

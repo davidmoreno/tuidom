@@ -34,3 +34,6 @@ class EventKeyPress(Event):
     def __init__(self, keycode: str):
         super().__init__("keypress")
         self.keycode = keycode
+
+    def __repr__(self):
+        return f"<KeyPress {repr(self.keycode)}>"

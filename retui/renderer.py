@@ -57,14 +57,25 @@ class Renderer:
         pass
 
     def readEvent(self) -> Event:
-        pass
+        return "ESC"
+
+    def breakpoint(self):
+        """
+        set up to do a breakpoint to debug. 
+        may need to clean screen, reenable echo and whatnot
+        """
+        breakpoint()
 
     def loop(self, doc: 'retui.document.Document'):
         while True:
             doc.materialize()
             doc.paint(self)
             try:
-                doc.on_event(self.readEvent())
+                ev = self.readEvent()
+                if ev.name == "keypress" and ev.keycode == defaults.BREAKPOINT_KEYPRESS:
+                    self.breakpoint()
+                else:
+                    doc.on_event(ev)
             except KeyboardInterrupt:
                 self.close()
                 raise

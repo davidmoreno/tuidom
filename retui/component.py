@@ -386,9 +386,3 @@ class Text(Component):
         self.layout.height = height
 
         return (width, height)
-
-
-div = Paintable
-div.__name__ = "div"
-span = Paintable
-span.__name__ = "span"
