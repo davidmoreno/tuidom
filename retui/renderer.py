@@ -42,5 +42,18 @@ class Renderer:
     def close(self):
         pass
 
+    def setCursor(self, x, y):
+        """
+        Just to set th eposition of the curso at the end of 
+        painting.
+        """
+        pass
+
+    def flush(self):
+        """
+        This pass is finished, flush data
+        """
+        pass
+
     def readEvent(self) -> Event:
         pass

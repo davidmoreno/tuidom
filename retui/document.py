@@ -2,6 +2,7 @@
 import logging
 
 from retui import defaults
+from retui.renderer import Renderer
 
 from .events import EventClick, EventKeyPress, Event, HandleEventTrait
 from .component import Component
@@ -86,8 +87,38 @@ class Document(HandleEventTrait, Component):
 
         # not handled
 
-    def paint(self, renderer):
+    def paint(self, renderer: Renderer):
+        self.calculateLayoutSizes(
+            0,
+            0,
+            renderer.width,
+            renderer.height
+        )
+        self.layout.y = 1
+        self.layout.x = 1
+        self.calculateLayoutPosition()
+        # for node in self.preorderTraversal():
+        #     print(node, node.layout)
+        # return
+
         renderer.fillStyle = self.getStyle("background")
         renderer.strokeStyle = self.getStyle("color")
-        renderer.fillRect(0, 0, renderer.width, renderer.height)
+        renderer.fillRect(1, 1, renderer.width, renderer.height)
+
         super().paint(renderer)
+        if self.currentFocusedElement:
+            renderer.setCursor(
+                self.currentFocusedElement.layout.x,
+                self.currentFocusedElement.layout.y
+            )
+        renderer.flush()
+
+    def loop(self, renderer: Renderer):
+        while True:
+            self.materialize()
+            self.paint(renderer)
+            try:
+                self.on_event(renderer.readEvent())
+            except KeyboardInterrupt:
+                renderer.close()
+                raise

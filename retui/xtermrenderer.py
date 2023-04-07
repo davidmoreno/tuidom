@@ -13,14 +13,20 @@ class XtermRenderer(Renderer):
     """
     Implementation for Xterm
     """
+    stdout = None
+    stdin = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.stdout = sys.stdout
+        self.stdin = sys.stdin
+
         width, height = shutil.get_terminal_size()
         self.width = width
-        self.height = height
+        # TODO Fix last row can not be fill until the end or does a CR
+        self.height = height - 1
 
-        fd = sys.stdin.fileno()
+        fd = self.stdin.fileno()
         self.oldtermios = termios.tcgetattr(fd)
         tty.setcbreak(fd)
         new = termios.tcgetattr(fd)
@@ -28,23 +34,26 @@ class XtermRenderer(Renderer):
         termios.tcsetattr(fd, termios.TCSADRAIN, new)
 
         # save screen state
-        # print("\033[?1049h;")
+        print("\033[?1049h;")
 
     def print(self, *str_or_list):
         """
         Indirect call just in case there are optimization oportunities
         """
-        print(strlist_to_str(str_or_list))
+        self.stdout.write(strlist_to_str(str_or_list))
+
+    def flush(self):
+        self.stdout.flush()
 
     def close(self):
         # recover saved state
-        # print("\033[?1049l;")
+        print("\033[?1049l;")
 
-        fd = sys.stdin.fileno()
+        fd = self.stdin.fileno()
         termios.tcsetattr(fd, termios.TCSADRAIN, self.oldtermios)
 
     def readEvent(self):
-        key = os.read(sys.stdin.fileno(), 1)
+        key = os.read(self.stdin.fileno(), 1)
 
         if 0 < ord(key) < 27:
             key = chr(ord(key) + ord('A') - 1)
@@ -88,12 +97,18 @@ class XtermRenderer(Renderer):
             self.__set_color(),
             [
                 [
-                    f"\033[{top};{x}H",  # position
+                    self.__set_cursor(x, top),
                     " "*width,  # write bg lines
                 ]
                 for top in range(y, y + height)
             ]
         )
+
+    def setCursor(self, x, y):
+        self.print(self.__set_cursor(x, y))
+
+    def __set_cursor(self, x, y):
+        return f"\033[{y};{x}H",  # position
 
     def strokeRect(self, x, y, width, height):
         """

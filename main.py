@@ -4,7 +4,7 @@ import logging
 
 from retui import Component, Document, XtermRenderer, div, span
 
-logger = logging.getLogger("example")
+logger = logging.getLogger("main")
 
 
 class CheckBox(Component):
@@ -26,7 +26,7 @@ class App(Component):
 
     def render(self):
         return div(className="flex-row")[
-            "Toggle",
+            "Toggle ",
             CheckBox(
                 value=self.state["is_on"],
                 on_click=lambda ev: self.setState(
@@ -39,16 +39,8 @@ class App(Component):
 def main():
     logging.basicConfig(level=logging.INFO)
     renderer = XtermRenderer()
-
     root = Document(App())
-
-    while True:
-        logger.debug("\nMaterialize:")
-        root.materialize()
-        logger.debug("\nRender:")
-        root.paint(renderer)
-        logger.debug("\nEvent:")
-        root.on_event(renderer.readEvent())
+    root.loop(renderer)
 
 
 if __name__ == '__main__':

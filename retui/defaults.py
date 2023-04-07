@@ -22,6 +22,7 @@ DEFAULT_CSS = {
     "body": {
         "background": "bg",
         "color": "fg",
+        "flex-direction": "column",
     },
     "div": {
         "flex-direction": "column",

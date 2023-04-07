@@ -9,16 +9,25 @@ from .renderer import Renderer
 logger = logging.getLogger(__name__)
 
 
-StyleProperty = Literal["color", "background", "flex-direction", "flex-grow"]
+StyleProperty = Literal[
+    "color",
+    "background",
+    "flex-direction",
+    "flex-grow",
+    "padding",
+    "border",
+    "width",
+    "height",
+]
 
 # this styles are checked against parents if not defined
-INHERITABLE_STYLES = ["color", "background"]
+INHERITABLE_STYLES: list[StyleProperty] = ["color", "background"]
 
 
 @dataclass
 class Layout:
-    x: int = 0
     y: int = 0
+    x: int = 0
     width: int = 0
     height: int = 0
 
@@ -195,7 +204,6 @@ class Component:
             yield from child.preorderTraversal()
 
     def getStyle(self, csskey: StyleProperty):
-        print("get ", csskey, "from", self)
         style = self.props.get("style")
         if style:
             value = style.get(csskey)
@@ -230,6 +238,98 @@ class Component:
                 return True
         return False
 
+    def calculateProportion(self, current, rule):
+        """
+        Many sizes and positions are relative to the parent size
+
+        This function hides this
+        """
+        # WIP, only fixed char sizes
+        if rule is None:
+            return None
+        if isinstance(rule, int):
+            return max(0, min(current, rule))
+        if isinstance(rule, str):
+            if rule == "auto":
+                return None
+            if rule.endswith("%"):
+                return int(current * int(rule[:-1]) / 100)
+            logger.warning("Invalid width rule: %s", rule)
+        return None
+
+    def calculateLayoutSizes(self, min_width, min_height, max_width, max_height):
+        """
+        Calculates the layout inside the desired rectangle.
+
+        Given the given constraints, sets own size. 
+        Once we have the size, position is calculated later.
+        """
+        width = self.calculateProportion(max_width, self.getStyle("width"))
+        if width:  # if there is a desired width, it is used
+            min_width = width
+            max_width = width
+        height = self.calculateProportion(max_height, self.getStyle("height"))
+        if height:  # if there is a desired height, it is used
+            min_height = height
+            max_height = height
+
+        width = min_width
+        height = max_height
+
+        direction = self.getStyle("flex-direction")
+        if direction == "row":
+            width, height = self.calculateLayoutSizesHorizontal(
+                min_width, min_height, max_width, max_height)
+        else:  # default for even unknown is vertical stack
+            width, height = self.calculateLayoutSizesVertical(
+                min_width, min_height, max_width, max_height)
+
+        width = min(max_width, max(width, min_width))
+        height = min(max_height, max(height, min_height))
+
+        self.layout.width = width
+        self.layout.height = height
+
+        return (width, height)
+
+    def calculateLayoutSizesVertical(self, min_width, min_height, max_width, max_height):
+        width = 0
+        height = 0
+        for children in self.__materialized_children:
+            cwidth, cheight = children.calculateLayoutSizes(
+                min_width, min_height, max_width, max_height)
+            width = max(cwidth, width)
+            height += cheight
+        return (width, height)
+
+    def calculateLayoutSizesHorizontal(self, min_width, min_height, max_width, max_height):
+        width = 0
+        height = 0
+        for children in self.__materialized_children:
+            cwidth, cheight = children.calculateLayoutSizes(
+                min_width, min_height, max_width, max_height)
+            width += cwidth
+            height = max(cheight, height)
+
+        return (width, height)
+
+    def calculateLayoutPosition(self):
+        """
+        Calculates the position of children: same as parent + sizeof prev childs.
+        """
+        x = self.layout.x
+        y = self.layout.y
+        print(self, x, y)
+        child: Component
+        for child in self.__materialized_children:
+            child.layout.y = y
+            child.layout.x = x
+            child.calculateLayoutPosition()
+            if self.getStyle("flex-direction") == "row":
+                x += child.layout.width
+            else:
+                y += child.layout.height
+
 
 class Paintable(HandleEventTrait, Component):
     """
@@ -244,7 +344,8 @@ class Paintable(HandleEventTrait, Component):
         if background:
             renderer.fillStyle = background
             renderer.fillRect(
-                0, 0, 20, 10,
+                self.layout.x, self.layout.y,
+                self.layout.width, self.layout.height,
             )
         super().paint(renderer)
 
@@ -255,8 +356,29 @@ class Text(Component):
         if text:
             renderer.fillText(
                 str(text),
-                5, 5,
+                self.layout.x, self.layout.y,
             )
+
+    def calculateLayoutSizes(self, min_width, min_height, max_width, max_height):
+        text = self.props.get("text").split('\n')
+        height = len(text)
+        width = max(len(x) for x in text)
+        if width < min_width:
+            width = min_width
+        if height < min_height:
+            height = min_height
+
+        if height > max_height:
+            logger.warning("Text too big for viewport: %s %s %s",
+                           self, width, height)
+        if width > max_width:
+            logger.warning("Text too big for viewport: %s %s %s",
+                           self, width, height)
+
+        self.layout.width = width
+        self.layout.height = height
+
+        return (width, height)
 
 
 div = Paintable
