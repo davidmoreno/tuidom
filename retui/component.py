@@ -319,7 +319,7 @@ class Component:
         """
         x = self.layout.x
         y = self.layout.y
-        print(self, x, y)
+        # print(self, x, y)
         child: Component
         for child in self.__materialized_children:
             child.layout.y = y
@@ -354,6 +354,13 @@ class Text(Component):
     def paint(self, renderer: Renderer):
         text = self.props.get("text")
         if text:
+            color = self.getStyle("color")
+            if color:
+                renderer.strokeStyle = color
+            background = self.getStyle("background")
+            if background:
+                renderer.fillStyle = background
+
             renderer.fillText(
                 str(text),
                 self.layout.x, self.layout.y,

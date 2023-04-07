@@ -112,13 +112,3 @@ class Document(HandleEventTrait, Component):
                 self.currentFocusedElement.layout.y
             )
         renderer.flush()
-
-    def loop(self, renderer: Renderer):
-        while True:
-            self.materialize()
-            self.paint(renderer)
-            try:
-                self.on_event(renderer.readEvent())
-            except KeyboardInterrupt:
-                renderer.close()
-                raise

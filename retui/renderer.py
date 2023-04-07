@@ -1,5 +1,6 @@
 
 import logging
+
 from .events import Event
 from . import defaults
 
@@ -57,3 +58,13 @@ class Renderer:
 
     def readEvent(self) -> Event:
         pass
+
+    def loop(self, doc: 'retui.document.Document'):
+        while True:
+            doc.materialize()
+            doc.paint(self)
+            try:
+                doc.on_event(self.readEvent())
+            except KeyboardInterrupt:
+                self.close()
+                raise

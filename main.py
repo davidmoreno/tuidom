@@ -3,6 +3,7 @@
 import logging
 
 from retui import Component, Document, XtermRenderer, div, span
+from retui.widgets import Body, Footer, Menu, MenuBar, MenuItem
 
 logger = logging.getLogger("main")
 
@@ -25,14 +26,30 @@ class App(Component):
     }
 
     def render(self):
-        return div(className="flex-row")[
-            "Toggle ",
-            CheckBox(
-                value=self.state["is_on"],
-                on_click=lambda ev: self.setState(
-                    {"is_on": not self.state["is_on"]}
-                )
-            ),
+        return [
+            MenuBar()[
+                Menu(label="File")[
+                    MenuItem()["Open..."],
+                    MenuItem()["Close"],
+                    MenuItem()["Quit"],
+                ],
+                Menu(label="Edit")[
+                    MenuItem()["Copy"],
+                    MenuItem()["Paste"],
+                    MenuItem()["Cut"],
+                ]
+            ],
+            Body()[
+                span()[
+                    "Toggle ",
+                    CheckBox(
+                        value=self.state["is_on"],
+                        on_click=lambda ev: self.setState(
+                            {"is_on": not self.state["is_on"]}
+                        )
+                    )],
+            ],
+            Footer()["(C) 2023 | Coralbits SL"],
         ]
 
 
@@ -40,7 +57,7 @@ def main():
     logging.basicConfig(level=logging.INFO)
     renderer = XtermRenderer()
     root = Document(App())
-    root.loop(renderer)
+    renderer.loop(root)
 
 
 if __name__ == '__main__':
