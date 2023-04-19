@@ -36,10 +36,10 @@ class Document(HandleEventTrait, Component):
     def root(self):
         return self.props["children"][0]
 
-    def is_focusable(self, el):
-        if not isinstance(el, HandleEventTrait):
+    def is_focusable(self, item: Component):
+        if not isinstance(item, HandleEventTrait):
             return False
-        for key in el.props.keys():
+        for key in item.props.keys():
             if key.startswith("on_"):
                 return True
         return False

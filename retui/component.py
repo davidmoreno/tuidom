@@ -3,11 +3,14 @@
 from dataclasses import dataclass
 import itertools
 import logging
+import re
 from typing import Literal
 from .events import HandleEventTrait
 from .renderer import Renderer
 logger = logging.getLogger(__name__)
 
+CSS_SELECTOR_RE = re.compile(
+    "(?P<name>\w+|)(?P<id>#\w+|)(?P<class>(\.\w+)*)(?P<pseudo>(:\w+)*)")
 
 StyleProperty = Literal[
     "color",
@@ -226,19 +229,39 @@ class Component:
         """
         Very simple selectors. Simple classnames, type and ids. Not nested.
         """
-        if selector == self.name:
+        if not selector or selector == "*":
             return True
-        if selector.startswith("."):
-            class_name = self.props.get("className")
-            if class_name:
-                class_name = class_name.split(" ")
-                if selector[1:] in class_name:
-                    return True
-        if selector.startswith("#"):
-            id = self.props.get("id")
-            if id and id == selector[1:]:
-                return True
-        return False
+
+        match = CSS_SELECTOR_RE.match(selector)
+        if not match:
+            logger.warning("Invalid selector")
+            return False
+        mdict = match.groupdict()
+        if mdict["name"] and mdict["name"] != self.name:
+            return False
+        if mdict["id"] and mdict["id"][1:] != self.props.get("id"):
+            return False
+        if mdict["class"]:
+            class_name = self.props.get("className").split(" ")
+            for clss in mdict["class"].split(".")[1:]:
+                if clss not in class_name:
+                    return False
+        if mdict["pseudo"]:
+            for pseudo in mdict["pseudo"].split(":")[1:]:
+                if pseudo == "focus":
+                    # current focused element maybe a distant child, must check all parents
+                    item = self.document.currentFocusedElement
+                    is_focused = False
+                    while item:
+                        if item == self:
+                            is_focused = True
+                        item = item.parent
+                    if not is_focused:
+                        return False
+                else:
+                    logger.warning("Unknown Pseudo Selector: %s", pseudo)
+
+        return True
 
     def calculateProportion(self, current, rule):
         """
@@ -281,10 +304,10 @@ class Component:
         direction = self.getStyle("flex-direction")
         if direction == "row":
             width, height = self.calculateLayoutSizesHorizontal(
-                min_width, min_height, max_width, max_height)
+                0, 0, max_width, max_height)
         else:  # default for even unknown is vertical stack
             width, height = self.calculateLayoutSizesVertical(
-                min_width, min_height, max_width, max_height)
+                0, 0, max_width, max_height)
 
         width = min(max_width, max(width, min_width))
         height = min(max_height, max(height, min_height))
@@ -299,7 +322,8 @@ class Component:
         height = 0
         for child in self.children:
             cwidth, cheight = child.calculateLayoutSizes(
-                min_width, min_height, max_width, max_height)
+                min_width, min_height, max_width, max_height
+            )
             width = max(cwidth, width)
             height += cheight
         return (width, height)
@@ -309,7 +333,8 @@ class Component:
         height = 0
         for child in self.children:
             cwidth, cheight = child.calculateLayoutSizes(
-                min_width, min_height, max_width, max_height)
+                min_width, min_height, max_width, max_height
+            )
             width += cwidth
             height = max(cheight, height)
 
@@ -363,7 +388,7 @@ class Paintable(HandleEventTrait, Component):
         super().paint(renderer)
 
 
-class Text(Component):
+class Text(Paintable):
     def paint(self, renderer: Renderer):
         text = self.props.get("text")
         if text:

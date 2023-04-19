@@ -4,7 +4,7 @@ import logging
 
 from retui import Component, Document, XtermRenderer
 from retui.events import EventExit, EventKeyPress
-from retui.widgets import Body, footer, select, header, option, div, span
+from retui.widgets import body, footer, select, header, option, div, span
 
 logger = logging.getLogger("main")
 
@@ -34,7 +34,7 @@ class App(Component):
 
     def render(self):
         return [
-            header(on_keypress=self.handleKeyPress)[
+            header()[
                 select(label="File")[
                     option()["Open..."],
                     option()["Close"],
@@ -46,7 +46,7 @@ class App(Component):
                     option()["Cut"],
                 ]
             ],
-            Body()[
+            body()[
                 span()[
                     "Toggle ",
                     CheckBox(

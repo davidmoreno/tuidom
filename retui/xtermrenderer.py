@@ -131,14 +131,14 @@ class XtermRenderer(Renderer):
         """
         raise NotImplemented("WIP")
 
-    def breakpoint(self, callback=None):
+    def breakpoint(self, callback=None, document=None):
         self.captureKeyboard(False)
 
         self.strokeStyle = "white"
         self.fillStyle = "black"
         self.setCursor(1, 1)
         self.fillRect(1, 1, self.width, self.height)
-        super().breakpoint(callback)
+        super().breakpoint(callback, document)
 
         self.captureKeyboard(True)
 

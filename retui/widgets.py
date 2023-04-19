@@ -1,4 +1,5 @@
 from retui.component import Paintable, Text
+from retui.events import EventFocus, HandleEventTrait
 
 div = Paintable
 div.__name__ = "div"
@@ -21,7 +22,7 @@ class select(Paintable):
         "open": False
     }
 
-    def handleOpenClose(self):
+    def handleOpenClose(self, ev):
         self.setState({"open": not self.state["open"]})
 
     def render(self):
@@ -39,7 +40,7 @@ class option(Paintable):
     pass
 
 
-class Body(Paintable):
+class body(Paintable):
     pass
 
 

@@ -50,6 +50,10 @@ DEFAULT_CSS = {
         "flex-direction": "row",
         "color": "text-secondary",
         "background": "bg-secondary",
+    },
+    "select:focus": {
+        "background": "text-secondary",
+        "color": "bg-secondary",
     }
 }
 

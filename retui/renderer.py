@@ -59,7 +59,7 @@ class Renderer:
     def readEvent(self) -> Event:
         return EventKeyPress("ESC")
 
-    def breakpoint(self, callback=None):
+    def breakpoint(self, callback=None, document=None):
         """
         set up to do a breakpoint to debug. 
         may need to clean screen, reenable echo and whatnot
@@ -68,7 +68,14 @@ class Renderer:
         """
         if callback:
             callback()
-        breakpoint()
+        import IPython
+        print("Started ipython terminal. Control+D to continue.")
+        print()
+        IPython.start_ipython(user_ns={
+            "root": document and document.root,
+            "document": document,
+            "renderer": self,
+        })
 
     def loop(self, doc: 'retui.document.Document'):
         while True:
@@ -77,7 +84,7 @@ class Renderer:
             try:
                 ev = self.readEvent()
                 if ev.name == "keypress" and ev.keycode == defaults.BREAKPOINT_KEYPRESS:
-                    self.breakpoint(lambda: doc.prettyPrint())
+                    self.breakpoint(lambda: doc.prettyPrint(), doc)
                 elif ev.name == "exit":
                     return ev
                 else:
