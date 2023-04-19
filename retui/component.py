@@ -59,7 +59,7 @@ class Component:
         return self
 
     def __repr__(self):
-        children = self.props.get("children")
+        children = self.children
         if not children:
             return f"<{self.name} {self.serialid} {self.props}/>"
         else:
@@ -331,6 +331,17 @@ class Component:
                 x += child.layout.width
             else:
                 y += child.layout.height
+
+    def prettyPrint(self, indent=0):
+        props = list(self.props.keys()) or ""
+        state = self.state and list(self.state.keys()) or ""
+        if self.children:
+            print(f'{" " * indent}<{self.name} {props} {state}>')
+            for child in self.children:
+                child.prettyPrint(indent+2)
+            print(f'{" " * indent}</{self.name}>')
+        else:
+            print(f'{" " * indent}<{self.name} {props} {state}/>')
 
 
 class Paintable(HandleEventTrait, Component):

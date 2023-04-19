@@ -1,7 +1,7 @@
 
 import logging
 
-from .events import Event
+from .events import Event, EventKeyPress
 from . import defaults
 
 logger = logging.getLogger(__name__)
@@ -57,13 +57,17 @@ class Renderer:
         pass
 
     def readEvent(self) -> Event:
-        return "ESC"
+        return EventKeyPress("ESC")
 
-    def breakpoint(self):
+    def breakpoint(self, callback=None):
         """
         set up to do a breakpoint to debug. 
         may need to clean screen, reenable echo and whatnot
+
+        Can call something after terminal is ready
         """
+        if callback:
+            callback()
         breakpoint()
 
     def loop(self, doc: 'retui.document.Document'):
@@ -73,7 +77,9 @@ class Renderer:
             try:
                 ev = self.readEvent()
                 if ev.name == "keypress" and ev.keycode == defaults.BREAKPOINT_KEYPRESS:
-                    self.breakpoint()
+                    self.breakpoint(lambda: doc.prettyPrint())
+                elif ev.name == "exit":
+                    return ev
                 else:
                     doc.on_event(ev)
             except KeyboardInterrupt:

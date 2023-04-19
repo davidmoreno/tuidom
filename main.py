@@ -3,6 +3,7 @@
 import logging
 
 from retui import Component, Document, XtermRenderer
+from retui.events import EventExit, EventKeyPress
 from retui.widgets import Body, footer, select, header, option, div, span
 
 logger = logging.getLogger("main")
@@ -26,9 +27,14 @@ class App(Component):
         "keypress": None,
     }
 
+    def handleKeyPress(self, ev: EventKeyPress):
+        self.setState({"keypress": ev})
+        if ev.keycode == "ESC":
+            self.document.on_event(EventExit(0))
+
     def render(self):
         return [
-            header(on_keypress=lambda ev: self.setState({"keypress": ev}))[
+            header(on_keypress=self.handleKeyPress)[
                 select(label="File")[
                     option()["Open..."],
                     option()["Close"],

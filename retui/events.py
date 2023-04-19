@@ -37,3 +37,11 @@ class EventKeyPress(Event):
 
     def __repr__(self):
         return f"<KeyPress {repr(self.keycode)}>"
+
+
+class EventExit(Event):
+    exitcode: int
+
+    def __init__(self, exitcode: str = 0):
+        super().__init__("exit")
+        self.exitcode = exitcode

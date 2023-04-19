@@ -4,7 +4,7 @@ import sys
 import termios
 import tty
 
-from .events import EventKeyPress
+from .events import Event, EventExit, EventKeyPress
 from .renderer import Renderer
 from .defaults import COLORS
 from retui import defaults
@@ -61,8 +61,11 @@ class XtermRenderer(Renderer):
         self.popScreen()
         self.captureKeyboard(False)
 
-    def readEvent(self):
-        key = os.read(self.stdin.fileno(), 10)
+    def readEvent(self) -> Event:
+        try:
+            key = os.read(self.stdin.fileno(), 10)
+        except KeyboardInterrupt:
+            return EventExit()
         if key in defaults.XTERM_KEYCODES:
             key = defaults.XTERM_KEYCODES[key]
 
@@ -128,11 +131,15 @@ class XtermRenderer(Renderer):
         """
         raise NotImplemented("WIP")
 
-    def breakpoint(self):
-        self.pushScreen()
+    def breakpoint(self, callback=None):
         self.captureKeyboard(False)
-        breakpoint()
-        self.popScreen()
+
+        self.strokeStyle = "white"
+        self.fillStyle = "black"
+        self.setCursor(1, 1)
+        self.fillRect(1, 1, self.width, self.height)
+        super().breakpoint(callback)
+
         self.captureKeyboard(True)
 
 
