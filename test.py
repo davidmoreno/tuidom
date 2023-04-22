@@ -3,8 +3,7 @@
 import logging
 import unittest
 
-from tests.retui import *
-from tests.tuidom import *
+from retui.tests import *
 
 logger = logging.getLogger(__name__)
 

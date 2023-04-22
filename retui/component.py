@@ -182,6 +182,10 @@ class Component:
     def updateProps(self, other):
         logger.debug("%s Update props: %s from %s",
                      self, self.props, other.props)
+        deleted_props = set(self.props.keys()) - set(other.props.keys())
+        for key in deleted_props:
+            del self.props[key]
+
         for key, val in other.props.items():
             oldval = self.props.get(key)
             if not oldval:
