@@ -4,7 +4,7 @@ import logging
 
 from retui import Component, Document, XtermRenderer
 from retui.events import EventExit, EventKeyPress
-from retui.widgets import body, button, footer, select, header, option, div, span
+from retui.widgets import body, button, footer, select, header, option, div, span, input
 
 logger = logging.getLogger("main")
 
@@ -27,10 +27,12 @@ class App(Document):
         "keypress": None,
     }
 
-    def handleKeyPress(self, ev: EventKeyPress):
-        self.setState({"keypress": ev})
+    def on_keypress(self, ev: EventKeyPress):
+        self.setState({"keypress": ev.keycode})
         if ev.keycode == "ESC":
             self.quit()
+            return
+        super().on_keypress(ev)
 
     def quit(self):
         self.document.on_event(EventExit(0))
@@ -62,6 +64,7 @@ class App(Document):
                             {"is_on": not self.state["is_on"]}
                         )
                     )],
+                input(className="bg-tertiary text-tertiary w-full"),
             ],
             footer()["(C) 2023 | Coralbits SL | ",
                      str(self.state["keypress"])],
@@ -72,7 +75,7 @@ def main():
     logging.basicConfig(level=logging.INFO)
     renderer = XtermRenderer()
     root = App()
-    renderer.loop(root)
+    root.loop(renderer)
 
 
 if __name__ == '__main__':

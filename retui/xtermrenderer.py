@@ -27,6 +27,7 @@ class XtermRenderer(Renderer):
         # TODO Fix last row can not be fill until the end or does a CR
         self.height = height - 1
         self.captureKeyboard(True)
+        self.pushScreen()
 
     def captureKeyboard(self, is_on):
         if is_on:
@@ -42,10 +43,10 @@ class XtermRenderer(Renderer):
 
     def pushScreen(self):
         # save screen state
-        print("\033[?1049h;")
+        print("\033[?1049h")
 
     def popScreen(self):
-        print("\033[?1049l;")
+        print("\033[?1049l")
 
     def print(self, *str_or_list):
         """
@@ -58,8 +59,8 @@ class XtermRenderer(Renderer):
 
     def close(self):
         # recover saved state
-        self.popScreen()
         self.captureKeyboard(False)
+        self.popScreen()
 
     def readEvent(self) -> Event:
         try:
@@ -78,6 +79,12 @@ class XtermRenderer(Renderer):
                     key = "ENTER"
             else:
                 key = key.decode("iso8859-15")
+        else:
+            # just try decode
+            try:
+                key = key.decode()
+            except:
+                pass
 
         return EventKeyPress(key)
 

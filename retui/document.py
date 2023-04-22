@@ -4,7 +4,7 @@ import logging
 from retui import defaults
 from retui.renderer import Renderer
 
-from .events import EventClick, EventKeyPress, Event, HandleEventTrait
+from .events import EventClick, EventExit, EventKeyPress, Event, HandleEventTrait
 from .component import Component
 
 logger = logging.getLogger(__name__)
@@ -17,9 +17,10 @@ class Document(HandleEventTrait, Component):
     currentFocusedElement = None
     name = "body"
     css = defaults.DEFAULT_CSS
+    stopLoop: None | EventExit = None
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **props):
+        super().__init__(**props)
         self.props = {
             "on_keypress": self.on_keypress,
         }
@@ -55,6 +56,10 @@ class Document(HandleEventTrait, Component):
             self.on_event(EventClick([1], (0, 0)))
 
     def on_event(self, ev: Event):
+        if isinstance(ev, EventExit):
+            self.stopLoop = ev
+            return
+
         name = ev.name
         if not ev.target:
             item = self.currentFocusedElement
@@ -95,9 +100,42 @@ class Document(HandleEventTrait, Component):
         renderer.fillRect(1, 1, renderer.width, renderer.height)
 
         super().paint(renderer)
-        if self.currentFocusedElement:
-            renderer.setCursor(
-                self.currentFocusedElement.layout.x,
-                self.currentFocusedElement.layout.y
-            )
+        self.setCursor(renderer)
         renderer.flush()
+
+    def setCursor(self, renderer: Renderer):
+        if self.currentFocusedElement:
+            el = self.currentFocusedElement
+            cursor = (0, 0)
+            parent = el
+            while parent:
+                if hasattr(parent, "cursor"):
+                    cursor = parent.cursor
+                    break
+                parent = parent.parent
+
+            renderer.setCursor(
+                el.layout.x + cursor[0],
+                el.layout.y + cursor[1],
+            )
+
+    def loop(self, renderer: Renderer):
+        self.stopLoop = None
+        while not self.stopLoop:
+            self.materialize()
+            self.paint(renderer)
+            try:
+                ev = renderer.readEvent()
+                if ev.name == "keypress" and ev.keycode == defaults.BREAKPOINT_KEYPRESS:
+                    self.breakpoint(lambda: self.prettyPrint(), self)
+                elif isinstance(ev, EventExit):
+                    return ev
+                else:
+                    self.on_event(ev)
+            except KeyboardInterrupt:
+                self.close()
+                raise
+
+        renderer.close()
+
+        return self.stopLoop

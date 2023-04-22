@@ -46,6 +46,9 @@ class Component:
     key = None
     layout: Layout = None
     children: list = None
+    # where to position the cursor relative to the parent, if focused
+    # if exists, good, if not, checks parent
+    # cursor: tuple[int, int] = (0, 0)
 
     __changed: bool = True
 

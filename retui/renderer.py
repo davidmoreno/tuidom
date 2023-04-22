@@ -1,7 +1,7 @@
 
 import logging
 
-from .events import Event, EventKeyPress
+from .events import Event, EventExit, EventKeyPress
 from . import defaults
 
 logger = logging.getLogger(__name__)
@@ -76,19 +76,3 @@ class Renderer:
             "document": document,
             "renderer": self,
         })
-
-    def loop(self, doc: 'retui.document.Document'):
-        while True:
-            doc.materialize()
-            doc.paint(self)
-            try:
-                ev = self.readEvent()
-                if ev.name == "keypress" and ev.keycode == defaults.BREAKPOINT_KEYPRESS:
-                    self.breakpoint(lambda: doc.prettyPrint(), doc)
-                elif ev.name == "exit":
-                    return ev
-                else:
-                    doc.on_event(ev)
-            except KeyboardInterrupt:
-                self.close()
-                raise

@@ -54,6 +54,21 @@ DEFAULT_CSS = {
         "background": "text-secondary",
         "color": "bg-secondary",
     },
+    "button:focus": {
+        "background": "text-secondary",
+        "color": "bg-secondary",
+    },
+    "input": {
+        "background": "text-secondary",
+        "color": "bg-secondary",
+    },
+    "input:focus": {
+        "background": "bg-secondary",
+        "color": "text-secondary",
+    },
+    ".w-full": {
+        "width": "100%",
+    },
     ".bold": {
         "font-weight": "bold",
     },
@@ -119,6 +134,20 @@ XTERM_KEYCODES = {
     b"\x19": "CONTROL-Y",
     b"\x1a": "CONTROL-Z",
     b"\x1b": "ESC",
+
+    b"\x1b[H": "START",
+    b"\x1b[F": "END",
+    b"\x1b[5~": "PAGE UP",
+    b"\x1b[6~": "PAGE DOWN",
+    b"\x1b[A": "UP",
+    b"\x1b[B": "DOWN",
+    b"\x1b[C": "RIGHT",
+    b"\x1b[D": "LEFT",
+    b'\x1b[3~': "SUPR",
+
+    b'\x1b[1;5C': "CONTROL-RIGHT",
+    b'\x1b[1;5D': "CONTROL-LEFT",
+
 }
 
 BREAKPOINT_KEYPRESS = "F12"
