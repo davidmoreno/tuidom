@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 import itertools
 import logging
+import math
 import re
 from typing import Literal
 from .events import HandleEventTrait
@@ -48,13 +49,14 @@ class Component:
 
     __changed: bool = True
 
-    def __init__(self, **props):
+    def __init__(self, *, children=None, **props):
         if not self.name:
             self.name = self.__class__.__name__
         self.props = props
         Component.serialid += 1
         self.serialid = Component.serialid
         self.layout = Layout()
+        self.children = children or []
         super().__init__()
 
     def __getitem__(self, children: list):
@@ -72,11 +74,11 @@ class Component:
         return self.props.get("children", [])
 
     def paint(self, renderer: Renderer):
-        logger.debug("paint %s", self)
+        # logger.debug("paint %s", self)
         # if not self.__changed:
         #     return
         for child in self.children:
-            logger.debug("paint child %s", child)
+            # logger.debug("paint child %s", child)
             child.paint(renderer)
 
     def setChanged(self):
@@ -87,7 +89,7 @@ class Component:
             self.parent.setChanged()
 
     def setState(self, update):
-        logger.debug("Update state %s: %s", self, update)
+        # logger.debug("Update state %s: %s", self, update)
         if self.state is None:
             self.state = {}
 
@@ -136,33 +138,34 @@ class Component:
 
             self.children = nextchildren
 
-        logger.debug("Materialized %s -> %s", self,
-                     self.children)
+        # logger.debug("Materialized %s -> %s", self,
+        #              self.children)
         # rec materialize
         for child in self.children:
             child.materialize()
 
     def reconcile(self, parent, leftchildren, rightchildren):
-        logger.debug("Reconcile two lists: %s <-> %s",
-                     leftchildren, rightchildren)
+        # logger.debug("Reconcile two lists: %s <-> %s",
+        #              leftchildren, rightchildren)
         nextchildren = []
         for left, right in itertools.zip_longest(leftchildren, rightchildren):
             # print("materialize iseq", left, right)
-            logger.debug("is eq: %s %s", left, right)
+            # logger.debug("is eq: %s %s", left, right)
             if self.isEquivalent(left, right):
-                logger.debug("Materialize reconcile: %s ~ %s", left, right)
+                # logger.debug("Materialize reconcile: %s ~ %s", left, right)
                 left.updateProps(right)
                 nextchildren.append(left)
+                left.props["children"] = self.reconcile(
+                    left,
+                    left.props.get("children") or [],
+                    right.props.get("children") or [],
+                )
             else:
-                logger.debug(
-                    "Materialize reconcile: %s != %s", left, right)
+                # logger.debug(
+                #     "Materialize reconcile: %s != %s", left, right)
                 nextchildren.append(right)
-            left.props["children"] = self.reconcile(
-                left,
-                left.props.get("children") or [],
-                right.props.get("children") or [],
-            )
 
+        nextchildren = [x for x in nextchildren if x]
         for child in nextchildren:
             if child.parent != parent:
                 child.parent = parent
@@ -172,16 +175,16 @@ class Component:
     def isEquivalent(self, left, right):
         if not left or not right:
             return False
-        if left.key == right.key:
-            return True
         if left.name == right.name:
+            return True
+        if left.key and left.key == right.key:
             return True
 
         return False
 
     def updateProps(self, other):
-        logger.debug("%s Update props: %s from %s",
-                     self, self.props, other.props)
+        # logger.debug("%s Update props: %s from %s",
+        #              self, self.props, other.props)
         deleted_props = set(self.props.keys()) - set(other.props.keys())
         for key in deleted_props:
             del self.props[key]
@@ -194,9 +197,9 @@ class Component:
             if oldval == val:
                 continue
             if key[:3] == "on_":
-                logger.debug("Do not replace on_ props: %s", key)
+                # logger.debug("Do not replace on_ props: %s", key)
                 continue
-            logger.debug("Replace props: %s", key)
+            # logger.debug("Replace props: %s", key)
             self.props[key] = val
 
     def queryElement(self, query):
@@ -362,8 +365,16 @@ class Component:
                 y += child.layout.height
 
     def prettyPrint(self, indent=0):
-        props = list(self.props.keys()) or ""
-        state = self.state and list(self.state.keys()) or ""
+        props = {
+            k: str(v) if not callable(v) else "[callable]"
+            for k, v in self.props.items()
+            if k != 'children'
+        }
+        state = self.state and {
+            k: str(v) if not callable(v) else "[callable]"
+            for k, v in self.state.items()
+            if k != 'children'
+        } or ""
         if self.children:
             print(f'{" " * indent}<{self.name} {props} {state}>')
             for child in self.children:
@@ -393,6 +404,9 @@ class Paintable(HandleEventTrait, Component):
 
 
 class Text(Paintable):
+    def __init__(self, text, **props):
+        super().__init__(text=text, **props)
+
     def paint(self, renderer: Renderer):
         text = self.props.get("text")
         if text:

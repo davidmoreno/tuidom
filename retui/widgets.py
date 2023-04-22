@@ -1,10 +1,13 @@
 from retui.component import Paintable, Text
 from retui.events import EventFocus, HandleEventTrait
 
-div = Paintable
-div.__name__ = "div"
-span = Paintable
-span.__name__ = "span"
+
+class div(Paintable):
+    pass
+
+
+class span(Paintable):
+    pass
 
 
 class header(Paintable):
@@ -27,11 +30,16 @@ class select(Paintable):
 
     def render(self):
         if self.state["open"]:
-            return Text(
-                on_click=self.handleOpenClose,
-                text=f" {self.props.get('label')} ",
-                className="bold underline italic"
-            )
+            return div()[
+                Text(
+                    className="relative",
+                    on_click=self.handleOpenClose, text=f"*{self.props.get('label')}*",
+                ),
+                div(
+                    className="absolute top-1 left-0 bg-seconadry text-secondary",
+                    children=self.props.get("children", []),
+                )
+            ]
         else:
             return Text(
                 on_click=self.handleOpenClose, text=f" {self.props.get('label')} "
