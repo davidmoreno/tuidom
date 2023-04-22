@@ -11,7 +11,7 @@ from .renderer import Renderer
 logger = logging.getLogger(__name__)
 
 CSS_SELECTOR_RE = re.compile(
-    "(?P<name>\w+|)(?P<id>#\w+|)(?P<class>(\.\w+)*)(?P<pseudo>(:\w+)*)")
+    r"(?P<name>\w+|)(?P<id>#\w+|)(?P<class>(\.(\w|[-_])+)*)(?P<pseudo>(:\w+)*)")
 
 StyleProperty = Literal[
     "color",
@@ -65,10 +65,14 @@ class Component:
 
     def __repr__(self):
         children = self.children
+        ids = ""
+        if "id" in self.props:
+            ids = f"#{self.props['id']}"
+
         if not children:
-            return f"<{self.name} {self.serialid} {self.props}/>"
+            return f"<{self.name}{ids} {self.serialid}/>"
         else:
-            return f"<{self.name} {self.serialid} {self.props}>{children}</{self.name}>"
+            return f"<{self.name}{ids} {self.serialid}>...{len(children)}...</{self.name}>"
 
     def render(self):
         return self.props.get("children", [])
@@ -310,10 +314,10 @@ class Component:
 
         direction = self.getStyle("flex-direction")
         if direction == "row":
-            width, height = self.calculateLayoutSizesHorizontal(
+            width, height = self.calculateLayoutSizesRow(
                 0, 0, max_width, max_height)
         else:  # default for even unknown is vertical stack
-            width, height = self.calculateLayoutSizesVertical(
+            width, height = self.calculateLayoutSizesColumn(
                 0, 0, max_width, max_height)
 
         width = min(max_width, max(width, min_width))
@@ -324,27 +328,82 @@ class Component:
 
         return (width, height)
 
-    def calculateLayoutSizesVertical(self, min_width, min_height, max_width, max_height):
-        width = 0
+    def split_fixed_variable_children(self):
+        children_grow = [
+            (x, x.getStyle("flex-grow"))
+            for x in self.children
+        ]
+        fixed = [x for x in children_grow if not x[1]]
+        variable = [x for x in children_grow if x[1]]
+        return fixed, variable
+
+    def calculateLayoutSizesColumn(self, min_width, min_height, max_width, max_height):
+        fixed_children, variable_children = self.split_fixed_variable_children()
+
+        width = min_width
         height = 0
-        for child in self.children:
-            cwidth, cheight = child.calculateLayoutSizes(
-                min_width, min_height, max_width, max_height
+        for child, _grow in fixed_children:
+            child.calculateLayoutSizes(
+                0, 0,
+                max_width, max_height
             )
-            width = max(cwidth, width)
-            height += cheight
+            height += child.layout.height
+            width = max(width, child.layout.width)
+            max_height = max_height-child.layout.height
+            min_width = max(min_width, width)
+
+        if variable_children:
+            quants = sum(x[1] for x in variable_children)
+            quant_size = max_height / quants
+            for child, grow in variable_children:
+                cheight = math.floor(quant_size * grow)
+                child.calculateLayoutSizes(
+                    min_width, cheight,  # fixed height
+                    max_width, cheight,
+                )
+                height += child.layout.height
+                width = max(width, child.layout.width)
+                max_height = max_height-child.layout.height
+                min_width = max(min_width, width)
+
+        # this is equivalent to align items stretch
+        for child in self.children:
+            child.layout.width = width
         return (width, height)
 
-    def calculateLayoutSizesHorizontal(self, min_width, min_height, max_width, max_height):
-        width = 0
-        height = 0
-        for child in self.children:
-            cwidth, cheight = child.calculateLayoutSizes(
-                min_width, min_height, max_width, max_height
-            )
-            width += cwidth
-            height = max(cheight, height)
+    def calculateLayoutSizesRow(self, min_width, min_height, max_width, max_height):
+        fixed_children, variable_children = self.split_fixed_variable_children()
 
+        width = 0
+        height = min_height
+
+        for child, _grow in fixed_children:
+            child.calculateLayoutSizes(
+                0, 0,
+                max_width, max_height
+            )
+            width += child.layout.width
+            height = max(height, child.layout.height)
+            max_width = max_width-child.layout.width
+            min_height = max(min_height, height)
+
+        if variable_children:
+            quants = sum(x[1] for x in variable_children)
+            quant_size = max_width / quants
+            for child, grow in variable_children:
+                cwidth = math.floor(quant_size * grow)
+                child.calculateLayoutSizes(
+                    cwidth, min_width,   # fixed width
+                    cwidth, max_width,
+                )
+                width += child.layout.width
+                height = max(height, child.layout.height)
+                max_width = max_width-child.layout.width
+                min_height = max(min_height, height)
+
+        # this is equivalent to align items stretch
+        for child in self.children:
+            child.layout.height = height
         return (width, height)
 
     def calculateLayoutPosition(self):
@@ -365,16 +424,22 @@ class Component:
                 y += child.layout.height
 
     def prettyPrint(self, indent=0):
-        props = {
-            k: str(v) if not callable(v) else "[callable]"
+        def printable(v):
+            if callable(v):
+                return '[callable]'
+            if isinstance(v, str):
+                return f'"{v}"'
+            return str(v)
+        props = ' '.join([
+            f"{k}={printable(v)}"
             for k, v in self.props.items()
             if k != 'children'
-        }
-        state = self.state and {
-            k: str(v) if not callable(v) else "[callable]"
+        ])
+        state = self.state and ' '.join([
+            f"{k}={printable(v)}"
             for k, v in self.state.items()
             if k != 'children'
-        } or ""
+        ]) or ""
         if self.children:
             print(f'{" " * indent}<{self.name} {props} {state}>')
             for child in self.children:

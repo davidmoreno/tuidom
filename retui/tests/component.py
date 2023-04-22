@@ -2,7 +2,7 @@ import logging
 from unittest import TestCase
 from retui.component import Component, Text
 from retui.document import Document
-from retui.widgets import div
+from retui.widgets import div, span
 
 logger = logging.getLogger(__name__)
 
@@ -87,3 +87,64 @@ class ComponentTestCase(TestCase):
             app.children[0].children[0].props["className"], "bold")
         self.assertEqual(
             app.children[0].children[1].props.get("className"), None)
+
+    def test_layout(self):
+        class App(Document):
+            def render(self):
+                return div(id="body")[
+                    span(id="b1")[
+                        Text("H1", id="h1"),
+                        Text("H2", id="h2", className="flex-1"),
+                        Text("H3", id="h3")
+                    ],
+                    Text("MID 1/3", id="b2", className="flex-1"),
+                    Text("MID 2/3", id="b3", className="flex-2"),
+                    Text("BOTTOM", id="b4"),
+                ]
+
+        app = App()
+        app.materialize()
+        app.prettyPrint()
+        app.calculateLayoutSizes(80, 32, 80, 32)
+        app.calculateLayoutPosition()
+
+        # small detour, check css selectors work
+        fl1 = app.queryElement("#b2")
+        self.assertTrue(fl1)
+        self.assertEqual(fl1.props.get("className"), "flex-1")
+        self.assertTrue(fl1.matchCssSelector(".flex-1"))
+        fl1 = app.queryElement(".flex-1")
+        self.assertTrue(fl1)
+        self.assertEqual(fl1.props.get("className"), "flex-1")
+
+        def printLayout(item: Component, indent=0):
+            print(
+                f"{' '*indent}{item.name}#{item.props.get('id')} {item.getStyle('flex-direction')} {item.layout}")
+            for child in item.children:
+                printLayout(child, indent+2)
+
+        printLayout(app)
+
+        el = app.queryElement("#b1")
+        self.assertEqual(el.layout.x, 0)
+        self.assertEqual(el.layout.y, 0)
+        self.assertEqual(el.layout.width, 80)
+        self.assertEqual(el.layout.height, 1)
+
+        el = app.queryElement("#b2")
+        self.assertEqual(el.layout.x, 0)
+        self.assertEqual(el.layout.y, 1)
+        self.assertEqual(el.layout.width, 80)
+        self.assertEqual(el.layout.height, 10)
+
+        el = app.queryElement("#b3")
+        self.assertEqual(el.layout.x, 0)
+        self.assertEqual(el.layout.y, 11)
+        self.assertEqual(el.layout.width, 80)
+        self.assertEqual(el.layout.height, 20)
+
+        el = app.queryElement("#b4")
+        self.assertEqual(el.layout.x, 0)
+        self.assertEqual(el.layout.y, 31)
+        self.assertEqual(el.layout.width, 80)
+        self.assertEqual(el.layout.height, 1)

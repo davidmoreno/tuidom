@@ -4,7 +4,7 @@ import logging
 
 from retui import Component, Document, XtermRenderer
 from retui.events import EventExit, EventKeyPress
-from retui.widgets import body, footer, select, header, option, div, span
+from retui.widgets import body, button, footer, select, header, option, div, span
 
 logger = logging.getLogger("main")
 
@@ -30,7 +30,10 @@ class App(Document):
     def handleKeyPress(self, ev: EventKeyPress):
         self.setState({"keypress": ev})
         if ev.keycode == "ESC":
-            self.document.on_event(EventExit(0))
+            self.quit()
+
+    def quit(self):
+        self.document.on_event(EventExit(0))
 
     def render(self):
         return [
@@ -44,6 +47,10 @@ class App(Document):
                     option()["Copy"],
                     option()["Paste"],
                     option()["Cut"],
+                ],
+                div(className="flex-1"),
+                button(on_click=lambda ev:self.quit())[
+                    "Quit"
                 ]
             ],
             body()[

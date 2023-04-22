@@ -56,3 +56,7 @@ class body(Paintable):
 
 class footer(Paintable):
     pass
+
+
+class button(Paintable):
+    pass

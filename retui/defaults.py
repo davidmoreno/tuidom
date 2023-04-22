@@ -30,7 +30,6 @@ DEFAULT_CSS = {
     "span": {
         "flex-direction": "row",
     },
-
     "App": {
         "flex-direction": "column",
     },
@@ -63,6 +62,15 @@ DEFAULT_CSS = {
     },
     ".underline": {
         "font-decoration": "underline",
+    },
+    ".flex-0": {
+        "flex-grow": 0,
+    },
+    ".flex-1": {
+        "flex-grow": 1,
+    },
+    ".flex-2": {
+        "flex-grow": 2,
     },
 }
 
