@@ -18,23 +18,12 @@ class Document(HandleEventTrait, Component):
     name = "body"
     css = defaults.DEFAULT_CSS
 
-    def __init__(self, root: Component = None):
+    def __init__(self):
         super().__init__()
         self.props = {
             "on_keypress": self.on_keypress,
         }
-        if root:
-            root.document = self
-            self.props["children"] = [root]
         self.document = self
-
-    def setRoot(self, root: Component):
-        root.document = self
-        self.props["children"] = [root]
-
-    @property
-    def root(self):
-        return self.props["children"][0]
 
     def is_focusable(self, item: Component):
         if not isinstance(item, HandleEventTrait):
@@ -46,16 +35,16 @@ class Document(HandleEventTrait, Component):
 
     def nextFocus(self):
         prev = self.currentFocusedElement
-        logger.debug("Current focus is %s", prev)
-        for child in self.root.preorderTraversal():
+        # logger.debug("Current focus is %s", prev)
+        for child in self.preorderTraversal():
             if self.is_focusable(child):
                 if prev is None:
-                    logger.debug("Set focus on %s", child)
+                    # logger.debug("Set focus on %s", child)
                     self.currentFocusedElement = child
                     return child
                 elif prev is child:
                     prev = None
-        logger.debug("Lost focus")
+        # logger.debug("Lost focus")
         self.currentFocusedElement = None
         return None
 
@@ -78,7 +67,7 @@ class Document(HandleEventTrait, Component):
         while item:
             if isinstance(item, HandleEventTrait):
                 event_handler = item.props.get(f"on_{name}")
-                logger.debug(f"Event {name} on {item}: {event_handler}")
+                # logger.debug(f"Event {name} on {item}: {event_handler}")
                 if event_handler:
                     event_handler(ev)
                 if ev.stopPropagation:

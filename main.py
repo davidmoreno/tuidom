@@ -21,7 +21,7 @@ class CheckBox(Component):
         )
 
 
-class App(Component):
+class App(Document):
     state = {
         "is_on": True,
         "keypress": None,
@@ -64,7 +64,7 @@ class App(Component):
 def main():
     logging.basicConfig(level=logging.INFO)
     renderer = XtermRenderer()
-    root = Document(App())
+    root = App()
     renderer.loop(root)
 
 
