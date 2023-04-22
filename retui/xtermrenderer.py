@@ -99,12 +99,30 @@ class XtermRenderer(Renderer):
     def __set_color(self):
         return f"\033[48;2;{self.rgbcolor(self.fillStyle)}m\033[38;2;{self.rgbcolor(self.strokeStyle)}m"
 
-    def fillText(self, text, x, y):
+    def fillText(self, text, x, y, bold=False, italic=False, underline=False):
+        if bold:
+            self.print(
+                f"\033[1m",
+            )
+        if italic:
+            self.print(
+                f"\033[3m",
+            )
+        if underline:
+            self.print(
+                f"\033[4m",
+            )
+
         for lineno, line in enumerate(text.split("\n")):
             self.print(
                 self.__set_color(),
                 f"\033[{y+lineno};{x}H",  # position
                 line
+            )
+
+        if bold or italic or underline:
+            self.print(
+                f"\033[0m",  # normal
             )
 
     def fillRect(self, x, y, width, height):

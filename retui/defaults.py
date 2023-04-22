@@ -19,7 +19,7 @@ COLORS = {
 }
 
 DEFAULT_CSS = {
-    "body": {
+    "document": {
         "background": "bg",
         "color": "fg",
         "flex-direction": "column",
@@ -40,7 +40,7 @@ DEFAULT_CSS = {
         "background": "bg-secondary",
         "width": "100%",
     },
-    "Body": {
+    "body": {
         "flex-direction": "column",
         "color": "text-primary",
         "background": "bg-primary",
@@ -54,7 +54,16 @@ DEFAULT_CSS = {
     "select:focus": {
         "background": "text-secondary",
         "color": "bg-secondary",
-    }
+    },
+    ".bold": {
+        "font-weight": "bold",
+    },
+    ".italic": {
+        "font-style": "italic",
+    },
+    ".underline": {
+        "font-decoration": "underline",
+    },
 }
 
 

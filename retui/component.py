@@ -246,7 +246,7 @@ class Component:
         if mdict["id"] and mdict["id"][1:] != self.props.get("id"):
             return False
         if mdict["class"]:
-            class_name = self.props.get("className").split(" ")
+            class_name = self.props.get("className", "").split(" ")
             for clss in mdict["class"].split(".")[1:]:
                 if clss not in class_name:
                     return False
@@ -402,10 +402,16 @@ class Text(Paintable):
             background = self.getStyle("background")
             if background:
                 renderer.fillStyle = background
+            fontWeight = self.getStyle("font-weight")
+            fontDecoration = self.getStyle("font-decoration")
+            fontStyle = self.getStyle("font-style")
 
             renderer.fillText(
                 str(text),
                 self.layout.x, self.layout.y,
+                bold=fontWeight == "bold",
+                underline=fontDecoration == "underline",
+                italic=fontStyle == "italic",
             )
 
     def calculateLayoutSizes(self, min_width, min_height, max_width, max_height):

@@ -35,7 +35,7 @@ class Renderer:
     def fillStroke(self, x, y, width, height):
         raise NotImplementedError("WIP")
 
-    def fillText(self, text, x, y):
+    def fillText(self, text, x, y, bold=False, italic=False, underline=False):
         print(text)
         logger.debug("TEXT %s %s", (x, y), text)
         pass

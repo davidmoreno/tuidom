@@ -28,7 +28,9 @@ class select(Paintable):
     def render(self):
         if self.state["open"]:
             return Text(
-                on_click=self.handleOpenClose, text=f"*{self.props.get('label')}*"
+                on_click=self.handleOpenClose,
+                text=f" {self.props.get('label')} ",
+                className="bold underline italic"
             )
         else:
             return Text(
