@@ -1,8 +1,8 @@
 import logging
 from unittest import TestCase
-from retui.component import Component, Text
+from retui.component import CSS_SELECTOR_RE, Component, Text
 from retui.document import Document
-from retui.widgets import div, span
+from retui.widgets import div, span, input
 
 logger = logging.getLogger(__name__)
 
@@ -108,15 +108,6 @@ class ComponentTestCase(TestCase):
         app.calculateLayoutSizes(80, 32, 80, 32)
         app.calculateLayoutPosition()
 
-        # small detour, check css selectors work
-        fl1 = app.queryElement("#b2")
-        self.assertTrue(fl1)
-        self.assertEqual(fl1.props.get("className"), "flex-1")
-        self.assertTrue(fl1.matchCssSelector(".flex-1"))
-        fl1 = app.queryElement(".flex-1")
-        self.assertTrue(fl1)
-        self.assertEqual(fl1.props.get("className"), "flex-1")
-
         def printLayout(item: Component, indent=0):
             print(
                 f"{' '*indent}{item.name}#{item.props.get('id')} {item.getStyle('flex-direction')} {item.layout}")
@@ -148,3 +139,74 @@ class ComponentTestCase(TestCase):
         self.assertEqual(el.layout.y, 31)
         self.assertEqual(el.layout.width, 80)
         self.assertEqual(el.layout.height, 1)
+
+    def test_css(self):
+        class App(Document):
+            def render(self):
+                return div(id="body")[
+                    span(id="b1")[
+                        Text("H1", id="h1"),
+                        Text("H2", id="h2", className="flex-1"),
+                        Text("H3", id="h3")
+                    ],
+                    Text("MID 1/3", id="b2", className="flex-1"),
+                    div(id="b3", className="flex-2")[
+                        input(id="i1", className="w-full"),
+                        input(id="i2", className="w-full"),
+                    ],
+                    Text("BOTTOM", id="b4"),
+                ]
+
+        app = App(css={
+            "input": {
+                "background": "white",
+            },
+            "input:focus": {
+                "background": "blue",
+            },
+        })
+        app.materialize()
+        app.prettyPrint()
+
+        fl1 = app.queryElement("#b2")
+        self.assertTrue(fl1)
+        self.assertEqual(fl1.props.get("className"), "flex-1")
+        self.assertTrue(fl1.matchCssSelector(".flex-1"))
+        fl1 = app.queryElement(".flex-1")
+        self.assertTrue(fl1)
+        self.assertEqual(fl1.props.get("className"), "flex-1")
+
+        inpt = app.queryElement("input")
+        self.assertEqual(inpt.name, "input")
+        self.assertEqual(inpt.props.get("id"), "i1")
+        self.assertEqual(inpt.props.get("className"), "w-full")
+
+        # check get proper style by priority
+
+        # not :focus
+        self.assertEqual(inpt.getStyle("background"), "white")
+
+        # :focus
+        app.currentFocusedElement = inpt
+        inpt2 = app.queryElement("input:focus")
+        self.assertEqual(inpt, inpt2)
+
+        self.assertEqual(inpt.getStyle("background"), "blue")
+
+        app.currentFocusedElement = inpt
+        order_of_pri = [
+            "",
+            "*",
+            "input",
+            "input:focus",
+            ".w-full",
+            "input:focus.w-full",
+            "input#i1.w-full",
+            "input:focus#i1.w-full",
+        ]
+        pri = 0
+        for sel in order_of_pri:
+            npri = inpt.matchCssSelector(sel)
+            logger.debug("'%s' -> %s", sel, npri)
+            self.assertGreaterEqual(npri, pri)
+            pri = npri

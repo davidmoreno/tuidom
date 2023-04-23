@@ -11,7 +11,7 @@ from .renderer import Renderer
 logger = logging.getLogger(__name__)
 
 CSS_SELECTOR_RE = re.compile(
-    r"(?P<name>\w+|)(?P<id>#\w+|)(?P<class>(\.(\w|[-_])+)*)(?P<pseudo>(:\w+)*)")
+    r"^(?P<name>\w+|)(?P<pseudo>(:\w+)*)(?P<id>#\w+|)(?P<class>(\.(\w|[-_])+)*)$")
 
 StyleProperty = Literal[
     "color",
@@ -234,7 +234,7 @@ class Component:
         for selector, style in self.document.css.items():
             npri = self.matchCssSelector(selector)
             if npri > pri:
-                value = style.get(csskey)
+                value = style.get(csskey) or value
                 pri = npri
         if value:
             return value
@@ -249,6 +249,8 @@ class Component:
 
         Returns 0 if no match, if not a priority number, the 
         highest more priority
+
+        Priority based on https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity
         """
         if not selector or selector == "*":
             return 1
@@ -262,11 +264,11 @@ class Component:
         if mdict["name"]:
             if mdict["name"] != self.name:
                 return 0
-            pri += 10
+            pri += 1
         if mdict["id"]:
             if mdict["id"][1:] != self.props.get("id"):
                 return 0
-            pri += 100
+            pri += 10000
         if mdict["class"]:
             class_name = self.props.get("className", "").split(" ")
             classes = mdict["class"].split(".")[1:]
@@ -275,7 +277,7 @@ class Component:
                     return 0
             pri += 10*len(classes)
         if mdict["pseudo"]:
-            pri += 200
+            pri += 1
             for pseudo in mdict["pseudo"].split(":")[1:]:
                 if pseudo == "focus":
                     # current focused element maybe a distant child, must check all parents

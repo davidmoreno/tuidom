@@ -19,7 +19,17 @@ class Document(HandleEventTrait, Component):
     css = defaults.DEFAULT_CSS
     stopLoop: None | EventExit = None
 
-    def __init__(self, **props):
+    def __init__(self, children=None, *, css=None, **props):
+        if children:
+            props = {
+                **props,
+                "children": children,
+            }
+        if css:
+            self.css = {
+                **defaults.DEFAULT_CSS,
+                **css
+            }
         super().__init__(**props)
         self.props = {
             "on_keypress": self.on_keypress,
