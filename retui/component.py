@@ -77,6 +77,9 @@ class Component:
         else:
             return f"<{self.name}{ids} {self.serialid}>...{len(children)}...</{self.name}>"
 
+    def componentDidMount(self):
+        pass
+
     def render(self):
         return self.props.get("children", [])
 
@@ -171,6 +174,8 @@ class Component:
                 # logger.debug(
                 #     "Materialize reconcile: %s != %s", left, right)
                 nextchildren.append(right)
+                # first use of right, so mount
+                right.componentDidMount()
 
         nextchildren = [x for x in nextchildren if x]
         for child in nextchildren:

@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import logging
+import os
 
 from retui import Component, Document, XtermRenderer
 from retui.events import EventExit, EventKeyPress
@@ -19,6 +20,29 @@ class CheckBox(Component):
                 self.props["value"] and "[x]" or "[ ]"
             ]
         )
+
+
+class FileSelector(Component):
+    state = {
+        "files": [
+            "Loading..."
+        ],
+    }
+
+    def componentDidMount(self):
+        files = []
+        for filename in os.listdir(self.props.get("path", ".")):
+            files.append(filename)
+        self.setState({"files": files})
+
+    def handleSelectedFile(self, filename):
+        pass
+
+    def render(self):
+        return div()[
+            [button(on_click=lambda ev:self.handleSelectedFile(x))[x]
+             for x in self.state["files"]]
+        ]
 
 
 class App(Document):
@@ -56,6 +80,7 @@ class App(Document):
                 ]
             ],
             body()[
+                FileSelector(path="."),
                 span()[
                     "Toggle ",
                     CheckBox(
