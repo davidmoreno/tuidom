@@ -3,7 +3,7 @@ from unittest import TestCase
 from retui.component import Component, Text
 from retui.document import Document
 from retui.events import EventClick, EventKeyPress
-from retui.widgets import div, select, option
+from retui.widgets import div, select, option, textarea
 
 logger = logging.getLogger(__name__)
 
@@ -36,3 +36,35 @@ class WidgetsTestCase(TestCase):
             app.queryElement("select").children[0].name,
             "div"
         )
+
+    def test_textarea(self):
+        inpt = textarea()
+
+        for c in "Hello\nworld!":
+            inpt.handleKeyPress(EventKeyPress(c))
+
+        self.assertEqual(inpt.getValue(), "Hello\nworld!")
+        self.assertEqual(inpt.cursor, (6, 1))
+
+        inpt.handleKeyPress(EventKeyPress("START"))
+        self.assertEqual(inpt.cursor, (0, 1))
+
+        inpt.handleKeyPress(EventKeyPress("UP"))
+        self.assertEqual(inpt.cursor, (0, 0))
+
+        inpt.handleKeyPress(EventKeyPress("UP"))
+        self.assertEqual(inpt.cursor, (0, 0))
+
+        inpt.handleKeyPress(EventKeyPress("END"))
+        self.assertEqual(inpt.cursor, (5, 0))
+
+        inpt.handleKeyPress(EventKeyPress("DOWN"))
+        self.assertEqual(inpt.cursor, (5, 1))
+
+        inpt.handleKeyPress(EventKeyPress("DOWN"))
+        self.assertEqual(inpt.cursor, (5, 1))
+
+        inpt = textarea(defaultValue="Hello\nworld!", rows=4, maxRows=10)
+        inpt.document = Document()
+        width, height = inpt.calculateLayoutSizes(0, 0, 100, 100)
+        self.assertEqual(height, 4)

@@ -4,7 +4,7 @@ import logging
 
 from retui import Component, Document, XtermRenderer
 from retui.events import EventExit, EventKeyPress
-from retui.widgets import body, button, footer, select, header, option, div, span, input
+from retui.widgets import body, button, footer, select, header, option, div, span, input, textarea
 
 logger = logging.getLogger("main")
 
@@ -64,7 +64,14 @@ class App(Document):
                             {"is_on": not self.state["is_on"]}
                         )
                     )],
-                input(className="bg-tertiary text-tertiary w-full"),
+                input(
+                    className="bg-tertiary text-tertiary w-full"
+                ),
+                textarea(
+                    className="bg-tertiary text-tertiary w-full",
+                    rows=4,
+                    maxRows=4,
+                ),
             ],
             footer()["(C) 2023 | Coralbits SL | ",
                      str(self.state["keypress"])],

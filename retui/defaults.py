@@ -66,6 +66,14 @@ DEFAULT_CSS = {
         "background": "bg-secondary",
         "color": "text-secondary",
     },
+    "textarea": {
+        "background": "text-secondary",
+        "color": "bg-secondary",
+    },
+    "textarea:focus": {
+        "background": "bg-secondary",
+        "color": "text-secondary",
+    },
     ".w-full": {
         "width": "100%",
     },

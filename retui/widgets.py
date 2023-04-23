@@ -41,10 +41,13 @@ class input(Paintable):
 
     state = {
         "position": 0,
-        "value": "this is a test",
+        "value": "",
     }
 
-    def getValue(self):
+    def maxRows(self):
+        return 1
+
+    def getValue(self) -> str:
         if 'value' in self.props:
             return self.props["value"]
         return self.state["value"]
@@ -59,6 +62,15 @@ class input(Paintable):
                 pos = max(0, pos-1)
             case "RIGHT":
                 pos = min(len(value), pos+1)
+            case "UP":
+                cursor = (self.cursor[0], max(0, self.cursor[1] - 1))
+                pos = self.cursorToPosition(cursor, value)
+            case "DOWN":
+                cursor = (
+                    self.cursor[0],
+                    min(self.cursor[1] + 1, len(value.split('\n'))-1)
+                )
+                pos = self.cursorToPosition(cursor, value)
             case "CONTROL-LEFT":
                 pos = self.state["position"]-1
                 # first skip spaces, then a word
@@ -72,7 +84,6 @@ class input(Paintable):
                 pos = self.state["position"]+1
                 mpos = len(value)
                 pos = min(mpos, pos)
-                print(1, pos)
                 # skip spaces, then word
                 while pos < mpos and value[pos] == ' ':
                     print(2, pos, value[pos], value[pos] == ' ')
@@ -82,9 +93,14 @@ class input(Paintable):
                     pos += 1
                 pos = min(mpos, pos)
             case "START":
-                pos = 0
+                pos = self.cursorToPosition((0, self.cursor[1]), value)
             case "END":
-                pos = len(value)
+                vp = value[pos:]
+                ex = vp.find('\n')
+                if ex < 0:
+                    pos += len(vp)
+                else:
+                    pos += ex
 
             case "DEL":
                 pos = self.state["position"]
@@ -99,6 +115,14 @@ class input(Paintable):
                 pre = value[:pos]
                 post = value[pos+1:]
                 value = f"{pre}{post}"
+            case "ENTER":
+                pos = self.state["position"]
+                pre = value[:pos]
+                post = value[pos:]
+                rows = sum(1 for x in value if x == '\n') + 1
+                if rows < self.maxRows():
+                    value = f"{pre}\n{post}"
+                    pos += 1
             case _:
                 if len(letter) == 1:
                     pos = self.state["position"]
@@ -113,13 +137,61 @@ class input(Paintable):
 
         self.setState({"position": pos, "value": value})
         on_change = self.props.get("on_change")
-        self.cursor = (pos, 0)
+
+        self.cursor = self.getCursor(value[:pos])
         if not on_change:
             return
         on_change(value)
 
+    def cursorToPosition(self, cursor, text):
+        """
+        Given a cursor and a text, return the real position
+        """
+        lines = text.split('\n')
+        pos = cursor[0]
+        pos += sum(len(x)+1 for x in lines[:cursor[1]])
+        return pos
+
+    def getCursor(self, value: str):
+        """
+        Gets the cursor position for the given string. 
+        Normally send a partial string split at pos
+        """
+        lines = value.split('\n')
+        posy = len(lines) - 1
+        posx = len(lines[-1])
+
+        # nposy = sum(1 for x in value if x == '\n')
+        # px = value.rfind('\n')
+        # if px < 0:
+        #     nposx = 0
+        # else:
+        #     nposx = len(value) - px
+
+        # assert posy == nposy
+        # assert posx == nposx
+
+        return (posx, posy)
+
+    def calculateLayoutSizes(self, min_width, min_height, max_width, max_height):
+        rows = self.props.get("rows", len(self.getValue().split('\n')))
+        maxRows = self.maxRows()
+        rows = min(rows, maxRows)
+
+        return super().calculateLayoutSizes(
+            min_width,
+            max(min_height, rows),
+            max_width,
+            min(max_height, maxRows)
+        )
+
     def render(self):
         return Text(self.getValue(), on_keypress=self.handleKeyPress)
+
+
+class textarea(input):
+    def maxRows(self):
+        return self.props.get("maxRows", 1024)
 
 
 class select(Paintable):
