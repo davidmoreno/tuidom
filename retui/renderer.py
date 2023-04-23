@@ -72,7 +72,6 @@ class Renderer:
         print("Started ipython terminal. Control+D to continue.")
         print()
         IPython.start_ipython(user_ns={
-            "root": document and document.root,
             "document": document,
             "renderer": self,
         })

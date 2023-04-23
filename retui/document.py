@@ -127,7 +127,10 @@ class Document(HandleEventTrait, Component):
             try:
                 ev = renderer.readEvent()
                 if ev.name == "keypress" and ev.keycode == defaults.BREAKPOINT_KEYPRESS:
-                    self.breakpoint(lambda: self.prettyPrint(), self)
+                    renderer.breakpoint(
+                        callback=lambda: self.prettyPrint(),
+                        document=self
+                    )
                 elif isinstance(ev, EventExit):
                     return ev
                 else:

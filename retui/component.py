@@ -229,38 +229,53 @@ class Component:
             if value:
                 return value
 
+        pri = 0
+        value = None
         for selector, style in self.document.css.items():
-            if self.matchCssSelector(selector):
+            npri = self.matchCssSelector(selector)
+            if npri > pri:
                 value = style.get(csskey)
-                if value:
-                    return value
+                pri = npri
+        if value:
+            return value
         if csskey in INHERITABLE_STYLES and self.parent:
             return self.parent.getStyle(csskey)
 
         return None
 
-    def matchCssSelector(self, selector: str) -> bool:
+    def matchCssSelector(self, selector: str) -> int:
         """
         Very simple selectors. Simple classnames, type and ids. Not nested.
+
+        Returns 0 if no match, if not a priority number, the 
+        highest more priority
         """
         if not selector or selector == "*":
-            return True
+            return 1
 
         match = CSS_SELECTOR_RE.match(selector)
+        pri = 0
         if not match:
             logger.warning("Invalid selector")
-            return False
+            return 0
         mdict = match.groupdict()
-        if mdict["name"] and mdict["name"] != self.name:
-            return False
-        if mdict["id"] and mdict["id"][1:] != self.props.get("id"):
-            return False
+        if mdict["name"]:
+            if mdict["name"] != self.name:
+                return 0
+            pri += 10
+        if mdict["id"]:
+            if mdict["id"][1:] != self.props.get("id"):
+                return 0
+            pri += 100
         if mdict["class"]:
             class_name = self.props.get("className", "").split(" ")
-            for clss in mdict["class"].split(".")[1:]:
+            classes = mdict["class"].split(".")[1:]
+            for clss in classes:
                 if clss not in class_name:
-                    return False
+                    return 0
+            pri += 10*len(classes)
         if mdict["pseudo"]:
+            pri += 200
             for pseudo in mdict["pseudo"].split(":")[1:]:
                 if pseudo == "focus":
                     # current focused element maybe a distant child, must check all parents
@@ -271,11 +286,11 @@ class Component:
                             is_focused = True
                         item = item.parent
                     if not is_focused:
-                        return False
+                        return 0
                 else:
                     logger.warning("Unknown Pseudo Selector: %s", pseudo)
 
-        return True
+        return pri
 
     def calculateProportion(self, current, rule):
         """
