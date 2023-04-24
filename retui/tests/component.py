@@ -210,3 +210,48 @@ class ComponentTestCase(TestCase):
             logger.debug("'%s' -> %s", sel, npri)
             self.assertGreaterEqual(npri, pri)
             pri = npri
+
+    def test_padding(self):
+        item = div(style={"padding": "1 2 3 4"})
+        item.document = Document()
+
+        self.assertEqual(item.getStyle("paddingTop"), 1)
+        self.assertEqual(item.getStyle("paddingRight"), 2)
+        self.assertEqual(item.getStyle("paddingBottom"), 3)
+        self.assertEqual(item.getStyle("paddingLeft"), 4)
+
+        item = div(style={"padding": "1 2 3"})
+        item.document = Document()
+        self.assertEqual(item.getStyle("paddingTop"), 1)
+        self.assertEqual(item.getStyle("paddingRight"), 2)
+        self.assertEqual(item.getStyle("paddingBottom"), 3)
+        self.assertEqual(item.getStyle("paddingLeft"), 2)
+
+        item = div(style={"padding": "1 2"})
+        item.document = Document()
+        self.assertEqual(item.getStyle("paddingTop"), 1)
+        self.assertEqual(item.getStyle("paddingRight"), 2)
+        self.assertEqual(item.getStyle("paddingBottom"), 1)
+        self.assertEqual(item.getStyle("paddingLeft"), 2)
+
+        item = div(style={"padding": "1"})
+        item.document = Document()
+        self.assertEqual(item.getStyle("paddingTop"), 1)
+        self.assertEqual(item.getStyle("paddingRight"), 1)
+        self.assertEqual(item.getStyle("paddingBottom"), 1)
+        self.assertEqual(item.getStyle("paddingLeft"), 1)
+
+        item = div(style={"padding": 1})
+        item.document = Document()
+        self.assertEqual(item.getStyle("paddingTop"), 1)
+        self.assertEqual(item.getStyle("paddingRight"), 1)
+        self.assertEqual(item.getStyle("paddingBottom"), 1)
+        self.assertEqual(item.getStyle("paddingLeft"), 1)
+
+        item = div(style={"padding": 1, "paddingTop": 2,
+                   "paddingRight": 3, "paddingBottom": 4, "paddingLeft": 5})
+        item.document = Document()
+        self.assertEqual(item.getStyle("paddingTop"), 2)
+        self.assertEqual(item.getStyle("paddingRight"), 3)
+        self.assertEqual(item.getStyle("paddingBottom"), 4)
+        self.assertEqual(item.getStyle("paddingLeft"), 5)

@@ -175,7 +175,7 @@ class Component:
                     left.props.get("children") or [],
                     right.props.get("children") or [],
                 )
-            else:
+            elif right:
                 # logger.debug(
                 #     "Materialize reconcile: %s != %s", left, right)
                 nextchildren.append(right)
@@ -236,7 +236,64 @@ class Component:
         for child in self.children:
             yield from child.preorderTraversal()
 
-    def getStyle(self, csskey: StyleProperty):
+    def getStyle(self, csskey: StyleProperty, default=None):
+        if csskey == "paddingTop":
+            val = self.__getStyle(csskey)
+            if val is not None:
+                return val
+            padding = self.__getStyle("padding")
+            if isinstance(padding, int):
+                return padding
+            if padding:
+                padding = padding.split()
+                return int(padding[0])
+            return default
+        if csskey == "paddingRight":
+            val = self.__getStyle(csskey)
+            if val is not None:
+                return val
+            padding = self.__getStyle("padding")
+            if isinstance(padding, int):
+                return padding
+            if padding:
+                padding = padding.split()
+                if len(padding) >= 2:
+                    return int(padding[1])
+                return int(padding[0])
+            return default
+        if csskey == "paddingBottom":
+            val = self.__getStyle(csskey)
+            if val is not None:
+                return val
+            padding = self.__getStyle("padding")
+            if isinstance(padding, int):
+                return padding
+            if padding:
+                padding = padding.split()
+                if len(padding) >= 3:
+                    return int(padding[2])
+                return int(padding[0])
+            return default
+        if csskey == "paddingLeft":
+            val = self.__getStyle(csskey)
+            if val is not None:
+                return val
+            padding = self.__getStyle("padding")
+            if isinstance(padding, int):
+                return padding
+            if padding:
+                padding = padding.split()
+                if len(padding) >= 4:
+                    return int(padding[3])
+                if len(padding) >= 2:
+                    return int(padding[1])
+                return int(padding[0])
+            return default
+
+        return self.__getStyle(csskey, default)
+
+    def __getStyle(self, csskey: StyleProperty, default=None):
+
         style = self.props.get("style")
         if style:
             value = style.get(csskey)
@@ -255,7 +312,7 @@ class Component:
         if csskey in INHERITABLE_STYLES and self.parent:
             return self.parent.getStyle(csskey)
 
-        return None
+        return default
 
     def matchCssSelector(self, selector: str) -> int:
         """
@@ -348,13 +405,14 @@ class Component:
             min_height = height
             max_height = height
 
-        max_width_pb = max_width
-        max_height_pb = max_height
-
-        padding = self.getStyle("padding")
-        if padding:
-            max_width_pb -= padding*2
-            max_height_pb -= padding*2
+        max_width_pb = max_width - (
+            self.getStyle("paddingLeft", 0) +
+            self.getStyle("paddingRight", 0)
+        )
+        max_height_pb = max_height - (
+            self.getStyle("paddingTop", 0) +
+            self.getStyle("paddingBottom", 0)
+        )
 
         direction = self.getStyle("flex-direction")
         if direction == "row":
@@ -462,10 +520,9 @@ class Component:
         """
         Calculates the position of children: same as parent + sizeof prev childs.
         """
-        padding = self.getStyle("padding") or 0
 
-        x = self.layout.x + padding
-        y = self.layout.y + padding
+        x = self.layout.x + (self.getStyle("paddingLeft") or 0)
+        y = self.layout.y + (self.getStyle("paddingTop") or 0)
         # print(self, x, y)
         child: Component
         for child in self.children:

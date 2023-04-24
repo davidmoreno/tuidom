@@ -117,7 +117,7 @@ class App(Document):
                     "maxWidth": 20,
                     "background": "#ff7777",
                     "text": "#fff",
-                    "padding": 1,
+                    "padding": 1,  # "1 2 1 2",
                 })[
                     div(className="flex-1")[
                         "Hello world"
