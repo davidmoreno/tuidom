@@ -4,7 +4,7 @@ import logging
 from retui import defaults
 from retui.renderer import Renderer
 
-from .events import EventClick, EventExit, EventKeyPress, Event, HandleEventTrait
+from .events import EventBlur, EventClick, EventExit, EventFocus, EventKeyPress, Event, HandleEventTrait
 from .component import Component
 
 logger = logging.getLogger(__name__)
@@ -46,22 +46,41 @@ class Document(HandleEventTrait, Component):
 
     def nextFocus(self):
         prev = self.currentFocusedElement
-        # logger.debug("Current focus is %s", prev)
         for child in self.preorderTraversal():
             if self.is_focusable(child):
                 if prev is None:
-                    # logger.debug("Set focus on %s", child)
-                    self.currentFocusedElement = child
-                    return child
+                    return self.setFocus(child)
                 elif prev is child:
                     prev = None
-        # logger.debug("Lost focus")
-        self.currentFocusedElement = None
-        return None
+        return self.setFocus(None)
+
+    def prevFocus(self):
+        current = self.currentFocusedElement
+        prev = None
+        for child in self.preorderTraversal():
+            if self.is_focusable(child):
+                if current is child:
+                    current = prev
+                    return self.setFocus(current)
+                prev = child
+        return self.setFocus(prev)
+
+    def setFocus(self, el):
+        if self.currentFocusedElement == el:
+            return
+        if self.currentFocusedElement:
+            self.on_event(EventBlur(self.currentFocusedElement))
+        self.currentFocusedElement = el
+        if el:
+            self.on_event(EventFocus(self.currentFocusedElement))
+
+        return el
 
     def on_keypress(self, event: EventKeyPress):
         if event.keycode == "TAB":
             self.nextFocus()
+        if event.keycode == "RTAB":
+            self.prevFocus()
         if event.keycode == "ENTER":
             self.on_event(EventClick([1], (0, 0)))
 

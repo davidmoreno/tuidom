@@ -50,6 +50,7 @@ class Component:
     # if exists, good, if not, checks parent
     # cursor: tuple[int, int] = (0, 0)
 
+    __mounted: bool = False
     __changed: bool = True
 
     def __init__(self, *, children=None, **props):
@@ -154,6 +155,10 @@ class Component:
         for child in self.children:
             child.materialize()
 
+        if not self.__mounted:
+            self.__mounted = True
+            self.componentDidMount()
+
     def reconcile(self, parent, leftchildren, rightchildren):
         # logger.debug("Reconcile two lists: %s <-> %s",
         #              leftchildren, rightchildren)
@@ -175,7 +180,11 @@ class Component:
                 #     "Materialize reconcile: %s != %s", left, right)
                 nextchildren.append(right)
                 # first use of right, so mount
-                right.componentDidMount()
+                right.parent = parent
+                right.document = parent and parent.document
+                if not right.__mounted:
+                    right.__mounted = False
+                    right.componentDidMount()
 
         nextchildren = [x for x in nextchildren if x]
         for child in nextchildren:

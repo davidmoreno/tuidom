@@ -25,7 +25,18 @@ class EventClick(Event):
 
 class EventFocus(Event):
     name = "focus"
-    pass
+
+    def __init__(self, target):
+        super().__init__("focus")
+        self.target = target
+
+
+class EventBlur(Event):
+    name = "blur"
+
+    def __init__(self, target):
+        super().__init__("blur")
+        self.target = target
 
 
 class EventKeyPress(Event):

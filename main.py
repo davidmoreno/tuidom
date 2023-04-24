@@ -24,9 +24,7 @@ class CheckBox(Component):
 
 class FileSelector(Component):
     state = {
-        "files": [
-            "Loading..."
-        ],
+        "files": False,
     }
 
     def componentDidMount(self):
@@ -35,11 +33,24 @@ class FileSelector(Component):
             files.append(filename)
         self.setState({"files": files})
 
+        self.document.setFocus(self)
+
     def handleSelectedFile(self, filename):
         pass
 
+    def handleKeyPress(self, ev: EventKeyPress):
+        if not self.queryElement("button:focus"):
+            self.document.setFocus(self.queryElement("button"))
+
+        if ev.keycode == "UP":
+            self.document.prevFocus()
+        if ev.keycode == "DOWN":
+            self.document.nextFocus()
+
     def render(self):
-        return div()[
+        if self.state["files"] is False:
+            return div()["Loading..."]
+        return div(on_keypress=self.handleKeyPress)[
             [button(on_click=lambda ev:self.handleSelectedFile(x))[x]
              for x in self.state["files"]]
         ]
@@ -52,7 +63,7 @@ class App(Document):
     }
 
     def on_keypress(self, ev: EventKeyPress):
-        self.setState({"keypress": ev.keycode})
+        self.setState({"keypress": f"{ev.target.name} {ev.keycode}"})
         if ev.keycode == "ESC":
             self.quit()
             return
