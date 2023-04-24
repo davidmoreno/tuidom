@@ -348,16 +348,21 @@ class Component:
             min_height = height
             max_height = height
 
-        width = min_width
-        height = max_height
+        max_width_pb = max_width
+        max_height_pb = max_height
+
+        padding = self.getStyle("padding")
+        if padding:
+            max_width_pb -= padding*2
+            max_height_pb -= padding*2
 
         direction = self.getStyle("flex-direction")
         if direction == "row":
             width, height = self.calculateLayoutSizesRow(
-                0, 0, max_width, max_height)
+                0, 0, max_width_pb, max_height_pb)
         else:  # default for even unknown is vertical stack
             width, height = self.calculateLayoutSizesColumn(
-                0, 0, max_width, max_height)
+                0, 0, max_width_pb, max_height_pb)
 
         width = min(max_width, max(width, min_width))
         height = min(max_height, max(height, min_height))
@@ -457,12 +462,15 @@ class Component:
         """
         Calculates the position of children: same as parent + sizeof prev childs.
         """
-        x = self.layout.x
-        y = self.layout.y
+        padding = self.getStyle("padding") or 0
+
+        x = self.layout.x + padding
+        y = self.layout.y + padding
         # print(self, x, y)
         child: Component
         for child in self.children:
             childposition = child.getStyle("position")
+
             if childposition == "absolute":
                 child.layout.y = child.getStyle("top") or 0
                 child.layout.x = child.getStyle("left") or 0
