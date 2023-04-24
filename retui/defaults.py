@@ -4,6 +4,7 @@ COLORS = {
     "green": (0, 255, 0),
     "blue": (0, 0, 255),
     "white": (255, 255, 255),
+    "yellow": "#FBCB0A",
     "grey": "#777777",
     "bg": "#590696",
     "bg-primary": "#590696",

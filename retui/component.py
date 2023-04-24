@@ -407,11 +407,13 @@ class Component:
 
         max_width_pb = max_width - (
             self.getStyle("paddingLeft", 0) +
-            self.getStyle("paddingRight", 0)
+            self.getStyle("paddingRight", 0) +
+            self.getStyle("border", 0)*2
         )
         max_height_pb = max_height - (
             self.getStyle("paddingTop", 0) +
-            self.getStyle("paddingBottom", 0)
+            self.getStyle("paddingBottom", 0) +
+            self.getStyle("border", 0)*2
         )
 
         direction = self.getStyle("flex-direction")
@@ -521,8 +523,18 @@ class Component:
         Calculates the position of children: same as parent + sizeof prev childs.
         """
 
-        x = self.layout.x + (self.getStyle("paddingLeft") or 0)
-        y = self.layout.y + (self.getStyle("paddingTop") or 0)
+        x = (
+            self.layout.x +
+            self.getStyle("paddingLeft", 0) +
+            self.getStyle("border", 0)
+        )
+
+        y = (
+            self.layout.y +
+            self.getStyle("paddingTop", 0) +
+            self.getStyle("border", 0)
+        )
+
         # print(self, x, y)
         child: Component
         for child in self.children:
@@ -579,10 +591,20 @@ class Paintable(HandleEventTrait, Component):
         background = self.getStyle("background")
         if background:
             renderer.fillStyle = background
-            renderer.fillRect(
-                self.layout.x, self.layout.y,
-                self.layout.width, self.layout.height,
-            )
+            renderer.strokeStyle = self.getStyle(
+                "borderColor") or self.getStyle("color")
+            border = self.getStyle("border")
+            if border:
+                renderer.lineWidth = self.getStyle("borderWidth", 0)
+                renderer.fillStroke(
+                    self.layout.x, self.layout.y,
+                    self.layout.width, self.layout.height,
+                )
+            else:
+                renderer.fillRect(
+                    self.layout.x, self.layout.y,
+                    self.layout.width, self.layout.height,
+                )
         super().paint(renderer)
 
 

@@ -112,12 +112,15 @@ class App(Document):
                     "position": "absolute",
                     "top": 10,
                     "left": 10,
-                    "width": 20,
-                    "height": 10,
+                    "width": 40,
+                    "height": 20,
                     "maxWidth": 20,
                     "background": "#ff7777",
                     "text": "#fff",
-                    "padding": 1,  # "1 2 1 2",
+                    "padding":  "1 2 0 2",
+                    "border": 1,
+                    "borderWidth": 3,
+                    "borderColor": "blue"
                 })[
                     div(className="flex-1")[
                         "Hello world"

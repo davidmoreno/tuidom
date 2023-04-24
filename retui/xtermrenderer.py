@@ -150,11 +150,27 @@ class XtermRenderer(Renderer):
     def __set_cursor(self, x, y):
         return f"\033[{y};{x}H",  # position
 
-    def strokeRect(self, x, y, width, height):
+    def fillStroke(self, x, y, width, height):
         """
         Draw rects with border
         """
-        raise NotImplemented("WIP")
+        self.fillRect(x, y, width, height)
+        if self.lineWidth == 0:
+            table_chars = "╭╮╰╯┄┆"
+        elif self.lineWidth == 1:
+            table_chars = "┌┐└┘─│"
+        elif self.lineWidth > 1:
+            table_chars = "╔╗╚╝═║"
+
+        self.print(self.__set_cursor(x, y))
+        self.print(table_chars[0], table_chars[4]*(width-2), table_chars[1])
+        for ny in range(y+1, y+height):
+            self.print(self.__set_cursor(x, ny))
+            self.print(table_chars[5])
+            self.print(self.__set_cursor(x+width-1, ny))
+            self.print(table_chars[5])
+        self.print(self.__set_cursor(x, y+height-1))
+        self.print(table_chars[2], table_chars[4]*(width-2), table_chars[3],)
 
     def breakpoint(self, callback=None, document=None):
         self.captureKeyboard(False)
