@@ -334,6 +334,11 @@ class Component:
         Given the given constraints, sets own size. 
         Once we have the size, position is calculated later.
         """
+        min_width = self.getStyle("minWidth") or min_width
+        min_height = self.getStyle("minHeight") or min_height
+        max_width = self.getStyle("maxWidth") or max_width
+        max_height = self.getStyle("maxHeight") or max_height
+
         width = self.calculateProportion(max_width, self.getStyle("width"))
         if width:  # if there is a desired width, it is used
             min_width = width
@@ -377,14 +382,18 @@ class Component:
         width = min_width
         height = 0
         for child, _grow in fixed_children:
+
             child.calculateLayoutSizes(
                 0, 0,
                 max_width, max_height
             )
-            height += child.layout.height
-            width = max(width, child.layout.width)
-            max_height = max_height-child.layout.height
-            min_width = max(min_width, width)
+
+            childposition = child.getStyle("position")
+            if childposition != "absolute":
+                height += child.layout.height
+                width = max(width, child.layout.width)
+                max_height = max_height-child.layout.height
+                min_width = max(min_width, width)
 
         if variable_children:
             quants = sum(x[1] for x in variable_children)
@@ -395,14 +404,18 @@ class Component:
                     min_width, cheight,  # fixed height
                     max_width, cheight,
                 )
-                height += child.layout.height
-                width = max(width, child.layout.width)
-                max_height = max_height-child.layout.height
-                min_width = max(min_width, width)
+                childposition = child.getStyle("position")
+                if childposition != "absolute":
+                    height += child.layout.height
+                    width = max(width, child.layout.width)
+                    max_height = max_height-child.layout.height
+                    min_width = max(min_width, width)
 
         # this is equivalent to align items stretch
         for child in self.children:
-            child.layout.width = width
+            childposition = child.getStyle("position")
+            if childposition != "absolute":
+                child.layout.width = width
         return (width, height)
 
     def calculateLayoutSizesRow(self, min_width, min_height, max_width, max_height):
@@ -449,13 +462,19 @@ class Component:
         # print(self, x, y)
         child: Component
         for child in self.children:
-            child.layout.y = y
-            child.layout.x = x
-            child.calculateLayoutPosition()
-            if self.getStyle("flex-direction") == "row":
-                x += child.layout.width
+            childposition = child.getStyle("position")
+            if childposition == "absolute":
+                child.layout.y = child.getStyle("top") or 0
+                child.layout.x = child.getStyle("left") or 0
+                child.calculateLayoutPosition()
             else:
-                y += child.layout.height
+                child.layout.y = y
+                child.layout.x = x
+                child.calculateLayoutPosition()
+                if self.getStyle("flex-direction") == "row":
+                    x += child.layout.width
+                else:
+                    y += child.layout.height
 
     def prettyPrint(self, indent=0):
         def printable(v):

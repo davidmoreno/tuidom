@@ -108,6 +108,25 @@ class App(Document):
                     rows=4,
                     maxRows=4,
                 ),
+                div(style={
+                    "position": "absolute",
+                    "top": 10,
+                    "left": 10,
+                    "width": 20,
+                    "height": 10,
+                    "maxWidth": 20,
+                    "background": "#ff7777",
+                    "text": "#fff",
+                })[
+                    div(className="flex-1")[
+                        "Hello world"
+                    ],
+                    span()[
+                        span(className="flex-1"),
+                        button(on_click=lambda ev:None)[" Accept "],
+                        button(on_click=lambda ev:None)[" Cancel "],
+                    ]
+                ]
             ],
             footer()["(C) 2023 | Coralbits SL | ",
                      str(self.state["keypress"])],
