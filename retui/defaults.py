@@ -75,6 +75,21 @@ DEFAULT_CSS = {
         "background": "bg-secondary",
         "color": "text-secondary",
     },
+    ".absolute": {
+        "position": "absolute",
+    },
+    ".z-0": {
+        "zIndex": 0,
+    },
+    ".z-1": {
+        "zIndex": 1,
+    },
+    ".z-10": {
+        "zIndex": 10,
+    },
+    ".z-100": {
+        "zIndex": 100,
+    },
     ".w-full": {
         "width": "100%",
     },

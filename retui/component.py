@@ -22,10 +22,11 @@ StyleProperty = Literal[
     "border",
     "width",
     "height",
+    "zIndex",
 ]
 
 # this styles are checked against parents if not defined
-INHERITABLE_STYLES: list[StyleProperty] = ["color", "background"]
+INHERITABLE_STYLES: list[StyleProperty] = ["color", "background", "zIndex"]
 
 
 @dataclass
@@ -85,12 +86,7 @@ class Component:
         return self.props.get("children", [])
 
     def paint(self, renderer: Renderer):
-        # logger.debug("paint %s", self)
-        # if not self.__changed:
-        #     return
-        for child in self.children:
-            # logger.debug("paint child %s", child)
-            child.paint(renderer)
+        pass
 
     def setChanged(self):
         if self.__changed:
@@ -310,7 +306,7 @@ class Component:
         if value:
             return value
         if csskey in INHERITABLE_STYLES and self.parent:
-            return self.parent.getStyle(csskey)
+            return self.parent.__getStyle(csskey)
 
         return default
 
@@ -541,8 +537,8 @@ class Component:
             childposition = child.getStyle("position")
 
             if childposition == "absolute":
-                child.layout.y = child.getStyle("top") or 0
-                child.layout.x = child.getStyle("left") or 0
+                child.layout.y = child.getStyle("top") or y
+                child.layout.x = child.getStyle("left") or x
                 child.calculateLayoutPosition()
             else:
                 child.layout.y = y
@@ -605,7 +601,7 @@ class Paintable(HandleEventTrait, Component):
                     self.layout.x, self.layout.y,
                     self.layout.width, self.layout.height,
                 )
-        super().paint(renderer)
+        # super().paint(renderer)
 
 
 class Text(Paintable):
@@ -642,12 +638,12 @@ class Text(Paintable):
         if height < min_height:
             height = min_height
 
-        if height > max_height:
-            logger.warning("Text too big for viewport: %s %s %s",
-                           self, width, height)
-        if width > max_width:
-            logger.warning("Text too big for viewport: %s %s %s",
-                           self, width, height)
+        # if height > max_height:
+        #     logger.warning("Text too big for viewport: %s %s %s",
+        #                    self, width, height)
+        # if width > max_width:
+        #     logger.warning("Text too big for viewport: %s %s %s",
+        #                    self, width, height)
 
         self.layout.width = width
         self.layout.height = height

@@ -1,5 +1,5 @@
 from retui.component import Paintable, Text
-from retui.events import EventFocus, EventKeyPress, HandleEventTrait
+from retui.events import EventFocus, EventKeyPress, EventSelected, HandleEventTrait
 
 
 class div(Paintable):
@@ -17,10 +17,6 @@ class header(Paintable):
     This is a common pattern, instead of setting classes for 
     custom elements, just use the element name
     """
-    pass
-
-
-class option(Paintable):
     pass
 
 
@@ -210,11 +206,21 @@ class select(Paintable):
                     on_click=self.handleOpenClose, text=f"*{self.props.get('label')}*",
                 ),
                 div(
-                    className="absolute top-1 left-0 bg-seconadry text-secondary",
-                    children=self.props.get("children", []),
-                )
+                    className="absolute z-100",
+                    style={"zIndex": 1000}
+                )[self.props.get("children", [])]
             ]
         else:
             return Text(
                 on_click=self.handleOpenClose, text=f" {self.props.get('label')} "
             )
+
+
+class option(Paintable):
+    def handleOnClick(self, ev):
+        on_change = self.parent.props.get("on_change")
+        if on_change:
+            on_change(EventSelected(ev.target, self.props.get("value")))
+
+    def __init__(self, **kwargs):
+        super().__init__(on_click=kwargs.get("on_click", self.handleOnClick))

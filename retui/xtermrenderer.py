@@ -107,6 +107,8 @@ class XtermRenderer(Renderer):
         return f"\033[48;2;{self.rgbcolor(self.fillStyle)}m\033[38;2;{self.rgbcolor(self.strokeStyle)}m"
 
     def fillText(self, text, x, y, bold=False, italic=False, underline=False):
+        if y < 0 or y > self.height:
+            return
         if bold:
             self.print(
                 f"\033[1m",
@@ -121,9 +123,12 @@ class XtermRenderer(Renderer):
             )
 
         for lineno, line in enumerate(text.split("\n")):
+            py = y+lineno
+            if py < 0 or py > self.height:
+                continue
             self.print(
                 self.__set_color(),
-                f"\033[{y+lineno};{x}H",  # position
+                f"\033[{py};{x}H",  # position
                 line
             )
 

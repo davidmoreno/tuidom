@@ -56,3 +56,10 @@ class EventExit(Event):
     def __init__(self, exitcode: str = 0):
         super().__init__("exit")
         self.exitcode = exitcode
+
+
+class EventSelected(Event):
+    def __init__(self, target, value):
+        super().__init__("selected")
+        self.originalTarget = target
+        self.value = value

@@ -128,7 +128,22 @@ class Document(HandleEventTrait, Component):
         renderer.strokeStyle = self.getStyle("color")
         renderer.fillRect(1, 1, renderer.width, renderer.height)
 
-        super().paint(renderer)
+        bylayer = {0: []}
+        for child in self.preorderTraversal():
+            if child == self:  # skip me
+                continue
+            # child.paint(renderer)
+            zIndex = child.getStyle("zIndex", 0) or 0
+            if zIndex not in bylayer:
+                bylayer[zIndex] = []
+            bylayer[zIndex].append(child)
+
+        for zIndex, paintlist in sorted(bylayer.items()):
+            for child in paintlist:
+                # print(zIndex, child, child.layout)
+                child.paint(renderer)
+
+        # super().paint(renderer)
         self.setCursor(renderer)
         renderer.flush()
 

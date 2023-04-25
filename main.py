@@ -56,6 +56,34 @@ class FileSelector(Component):
         ]
 
 
+def dialog(open: bool):
+    if open:
+        return div(style={
+            "zIndex": 100,
+            "position": "absolute",
+            "top": 10,
+            "left": 10,
+            "width": 40,
+            "height": 20,
+            "maxWidth": 20,
+            "background": "#ff7777",
+            "text": "#fff",
+                    "padding":  "1 2 0 2",
+                    "border": 1,
+                    "borderWidth": 3,
+                    "borderColor": "blue"
+        })[
+            div(className="flex-1")[
+                "Hello world"
+            ],
+            span()[
+                span(className="flex-1"),
+                button(on_click=lambda ev:None)[" Accept "],
+                button(on_click=lambda ev:None)[" Cancel "],
+            ]
+        ]
+
+
 class App(Document):
     state = {
         "is_on": True,
@@ -91,7 +119,7 @@ class App(Document):
                 ]
             ],
             body()[
-                FileSelector(path="."),
+                # FileSelector(path="."),
                 span()[
                     "Toggle ",
                     CheckBox(
@@ -108,29 +136,7 @@ class App(Document):
                     rows=4,
                     maxRows=4,
                 ),
-                div(style={
-                    "position": "absolute",
-                    "top": 10,
-                    "left": 10,
-                    "width": 40,
-                    "height": 20,
-                    "maxWidth": 20,
-                    "background": "#ff7777",
-                    "text": "#fff",
-                    "padding":  "1 2 0 2",
-                    "border": 1,
-                    "borderWidth": 3,
-                    "borderColor": "blue"
-                })[
-                    div(className="flex-1")[
-                        "Hello world"
-                    ],
-                    span()[
-                        span(className="flex-1"),
-                        button(on_click=lambda ev:None)[" Accept "],
-                        button(on_click=lambda ev:None)[" Cancel "],
-                    ]
-                ]
+                dialog(True),
             ],
             footer()["(C) 2023 | Coralbits SL | ",
                      str(self.state["keypress"])],
