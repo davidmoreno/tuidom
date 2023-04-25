@@ -38,6 +38,11 @@ class Layout:
 
 
 class Component:
+    """
+    Props:
+    * style -- Dict of styles | another component to get styles from it. See select
+    * className - List of classnames
+    """
     serialid = 0  # just for debugging, to ensure materialize reuses as possible
     name = None
     props: dict = None
@@ -233,6 +238,8 @@ class Component:
             yield from child.preorderTraversal()
 
     def getStyle(self, csskey: StyleProperty, default=None):
+        if isinstance(self.props.get("style"), Component):
+            return self.props.get("style").getStyle(csskey, default)
         if csskey == "paddingTop":
             val = self.__getStyle(csskey)
             if val is not None:

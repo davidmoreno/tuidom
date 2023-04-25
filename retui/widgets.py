@@ -1,5 +1,5 @@
 from retui.component import Paintable, Text
-from retui.events import EventFocus, EventKeyPress, EventSelected, HandleEventTrait
+from retui.events import EventKeyPress, EventChange
 
 
 class div(Paintable):
@@ -198,12 +198,20 @@ class select(Paintable):
     def handleOpenClose(self, ev):
         self.setState({"open": not self.state["open"]})
 
+    def handleChange(self, ev):
+        self.setState({"open": False})
+        on_change = self.props.get("on_change")
+        ev.target = self
+        if on_change:
+            on_change(ev)
+
     def render(self):
         if self.state["open"]:
             return div()[
                 Text(
+                    style=self,
                     className="relative",
-                    on_click=self.handleOpenClose, text=f"*{self.props.get('label')}*",
+                    on_click=self.handleOpenClose, text=f" {self.props.get('label')} ",
                 ),
                 div(
                     className="absolute z-100",
@@ -212,15 +220,19 @@ class select(Paintable):
             ]
         else:
             return Text(
+                style=self,
                 on_click=self.handleOpenClose, text=f" {self.props.get('label')} "
             )
 
 
 class option(Paintable):
     def handleOnClick(self, ev):
-        on_change = self.parent.props.get("on_change")
-        if on_change:
-            on_change(EventSelected(ev.target, self.props.get("value")))
+        parent = self.parent
+        while parent and not isinstance(parent, select):
+            parent = parent.parent
+        if not parent:
+            return
+        parent.handleChange(EventChange(self.props.get("value"), target=self))
 
     def __init__(self, **kwargs):
         super().__init__(on_click=kwargs.get("on_click", self.handleOnClick))

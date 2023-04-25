@@ -58,8 +58,8 @@ class EventExit(Event):
         self.exitcode = exitcode
 
 
-class EventSelected(Event):
-    def __init__(self, target, value):
+class EventChange(Event):
+    def __init__(self, value, target=None):
         super().__init__("selected")
-        self.originalTarget = target
         self.value = value
+        self.originalTarget = target

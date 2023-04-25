@@ -51,9 +51,27 @@ DEFAULT_CSS = {
         "color": "text-secondary",
         "background": "bg-secondary",
     },
+    "select": {
+        "cursor": "none",
+    },
     "select:focus": {
         "background": "text-secondary",
         "color": "bg-secondary",
+    },
+    "option": {
+        "background": "bg-secondary",
+        "color": "text-secondary",
+        "padding": "0 1",
+        "cursor": "none",
+    },
+    "option:focus": {
+        "background": "text-secondary",
+        "color": "bg-secondary",
+    },
+    "button": {
+        "cursor": "none",
+        "background": "bg-secondary",
+        "color": "text-secondary",
     },
     "button:focus": {
         "background": "text-secondary",
@@ -111,6 +129,9 @@ DEFAULT_CSS = {
     ".flex-2": {
         "flex-grow": 2,
     },
+    ".cursor-hidden": {
+        "cursor": "hidden",
+    }
 }
 
 

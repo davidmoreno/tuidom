@@ -148,20 +148,34 @@ class Document(HandleEventTrait, Component):
         renderer.flush()
 
     def setCursor(self, renderer: Renderer):
-        if self.currentFocusedElement:
-            el = self.currentFocusedElement
-            cursor = (0, 0)
-            parent = el
-            while parent:
-                if hasattr(parent, "cursor"):
-                    cursor = parent.cursor
-                    break
-                parent = parent.parent
-
+        el = self.currentFocusedElement
+        if not el:
             renderer.setCursor(
-                el.layout.x + cursor[0],
-                el.layout.y + cursor[1],
+                renderer.width,
+                renderer.height,
             )
+            return
+
+        cursor = el.getStyle("cursor")
+        if cursor == "hidden" or cursor == "none":
+            renderer.setCursor(
+                renderer.width,
+                renderer.height,
+            )
+            return
+
+        cursor = (0, 0)
+        parent = el
+        while parent:
+            if hasattr(parent, "cursor"):
+                cursor = parent.cursor
+                break
+            parent = parent.parent
+
+        renderer.setCursor(
+            el.layout.x + cursor[0],
+            el.layout.y + cursor[1],
+        )
 
     def loop(self, renderer: Renderer):
         self.stopLoop = None
