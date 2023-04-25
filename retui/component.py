@@ -408,15 +408,19 @@ class Component:
             min_height = height
             max_height = height
 
+        border = self.getStyle("border", 0)
+        if border:
+            border = 2
+
         max_width_pb = max_width - (
             self.getStyle("paddingLeft", 0) +
             self.getStyle("paddingRight", 0) +
-            self.getStyle("border", 0)*2
+            border
         )
         max_height_pb = max_height - (
             self.getStyle("paddingTop", 0) +
             self.getStyle("paddingBottom", 0) +
-            self.getStyle("border", 0)*2
+            border
         )
 
         direction = self.getStyle("flex-direction")
@@ -544,8 +548,12 @@ class Component:
             childposition = child.getStyle("position")
 
             if childposition == "absolute":
-                child.layout.y = child.getStyle("top") or y
-                child.layout.x = child.getStyle("left") or x
+                child.layout.y = self.calculateProportion(
+                    self.layout.width, child.getStyle("top")
+                ) or y
+                child.layout.x = self.calculateProportion(
+                    self.layout.width, child.getStyle("left")
+                ) or x
                 child.calculateLayoutPosition()
             else:
                 child.layout.y = y
@@ -598,7 +606,7 @@ class Paintable(HandleEventTrait, Component):
                 "borderColor") or self.getStyle("color")
             border = self.getStyle("border")
             if border:
-                renderer.lineWidth = self.getStyle("borderWidth", 0)
+                renderer.lineWidth = self.getStyle("border", 0)
                 renderer.fillStroke(
                     self.layout.x, self.layout.y,
                     self.layout.width, self.layout.height,

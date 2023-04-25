@@ -1,4 +1,4 @@
-from retui.component import Paintable, Text
+from retui.component import Component, Paintable, Text
 from retui.events import EventKeyPress, EventChange
 
 
@@ -205,9 +205,19 @@ class select(Paintable):
         if on_change:
             on_change(ev)
 
+    def handleKeyPress(self, ev: EventKeyPress):
+        if not self.children or not self.state["open"]:
+            return
+        current = self.queryElement(":focus")
+        if not current:
+            if ev.keycode == "DOWN":
+                self.document.setFocus(self.children[0])
+            if ev.keycode == "UP":
+                self.document.setFocus(self.children[-1])
+
     def render(self):
         if self.state["open"]:
-            return div()[
+            return div(on_keypress=self.handleKeyPress)[
                 Text(
                     style=self,
                     className="relative",
@@ -236,3 +246,7 @@ class option(Paintable):
 
     def __init__(self, **kwargs):
         super().__init__(on_click=kwargs.get("on_click", self.handleOnClick))
+
+
+class dialog(Paintable):
+    pass

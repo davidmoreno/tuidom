@@ -160,22 +160,26 @@ class XtermRenderer(Renderer):
         Draw rects with border
         """
         self.fillRect(x, y, width, height)
-        if self.lineWidth == 0:
-            table_chars = "╭╮╰╯┄┆"
-        elif self.lineWidth == 1:
-            table_chars = "┌┐└┘─│"
-        elif self.lineWidth > 1:
-            table_chars = "╔╗╚╝═║"
+        # if self.lineWidth == 0:
+        #     table_chars = "╭╮╰╯┄┆"
+        if self.lineWidth == 1:
+            table_chars = "│┌─┐└─┘│"
+        elif self.lineWidth == 2:
+            table_chars = "┃┏━┓┗━┛┃"
+        elif self.lineWidth == 3:
+            table_chars = "║╔═╗╚═╝║"
+        elif self.lineWidth >= 4:
+            table_chars = "▐▛▀▜▙▄▟▌"
 
         self.print(self.__set_cursor(x, y))
-        self.print(table_chars[0], table_chars[4]*(width-2), table_chars[1])
+        self.print(table_chars[1], table_chars[2]*(width-2), table_chars[3])
         for ny in range(y+1, y+height):
             self.print(self.__set_cursor(x, ny))
-            self.print(table_chars[5])
+            self.print(table_chars[7])
             self.print(self.__set_cursor(x+width-1, ny))
-            self.print(table_chars[5])
+            self.print(table_chars[0])
         self.print(self.__set_cursor(x, y+height-1))
-        self.print(table_chars[2], table_chars[4]*(width-2), table_chars[3],)
+        self.print(table_chars[4], table_chars[5]*(width-2), table_chars[6],)
 
     def breakpoint(self, callback=None, document=None):
         self.captureKeyboard(False)

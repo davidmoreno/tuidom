@@ -5,7 +5,7 @@ import os
 
 from retui import Component, Document, XtermRenderer
 from retui.events import EventExit, EventKeyPress
-from retui.widgets import body, button, footer, select, header, option, div, span, input, textarea
+from retui.widgets import body, button, dialog, footer, select, header, option, div, span, input, textarea
 
 logger = logging.getLogger("main")
 
@@ -56,38 +56,25 @@ class FileSelector(Component):
         ]
 
 
-def dialog(open: bool):
-    if open:
-        return div(style={
-            "zIndex": 100,
-            "position": "absolute",
-            "top": 10,
-            "left": 10,
-            "width": 40,
-            "height": 20,
-            "background": "#ff7777",
-            "text": "#fff",
-                    "padding":  "1 2 0 2",
-                    "border": 1,
-                    "borderWidth": 3,
-                    "borderColor": "blue"
-        })[
-            div(className="flex-1")[
-                "Hello world"
-            ],
-            span()[
-                span(className="flex-1"),
-                button(on_click=lambda ev:None)[" Accept "],
-                " ",
-                button(on_click=lambda ev:None)[" Cancel "],
-            ]
+def OpenfileDialog(onAccept: callable, onCancel: callable):
+    return dialog()[
+        FileSelector(path="."),
+        span()[
+            span(className="flex-1"),
+            button(on_click=lambda ev:onAccept())[
+                " Accept "],
+            " ",
+            button(on_click=lambda ev:onCancel())[
+                " Cancel "],
         ]
+    ]
 
 
 class App(Document):
     state = {
         "is_on": True,
         "keypress": None,
+        "openDialog": False,
     }
 
     def on_keypress(self, ev: EventKeyPress):
@@ -103,10 +90,13 @@ class App(Document):
     def render(self):
         return [
             header()[
-                select(label="File")[
-                    option()["Open..."],
-                    option()["Close"],
-                    option()["Quit"],
+                select(
+                    label="File",
+                    on_change=lambda ev: self.setState({"openDialog": True})
+                )[
+                    option(value="open")["Open..."],
+                    option(value="close")["Close"],
+                    option(value="quit")["Quit"],
                 ],
                 select(label="Edit")[
                     option()["Copy"],
@@ -136,7 +126,10 @@ class App(Document):
                     rows=4,
                     maxRows=4,
                 ),
-                dialog(True),
+                self.state["openDialog"] and OpenfileDialog(
+                    lambda: self.setState({"openDialog": False}),
+                    lambda: self.setState({"openDialog": False}),
+                ),
             ],
             footer()["(C) 2023 | Coralbits SL | ",
                      str(self.state["keypress"])],
