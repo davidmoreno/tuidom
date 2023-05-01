@@ -50,15 +50,18 @@ class FileSelector(Component):
     def render(self):
         if self.state["files"] is False:
             return div()["Loading..."]
-        return div(on_keypress=self.handleKeyPress)[
-            [button(on_click=lambda ev:self.handleSelectedFile(x))[x]
-             for x in self.state["files"]]
+        return div(on_keypress=self.handleKeyPress, className="w-full flex-1")[
+            [button(
+                className="w-full",
+                on_click=lambda ev:self.handleSelectedFile(x),
+            )[x]
+                for x in self.state["files"]]
         ]
 
 
 def OpenfileDialog(onAccept: callable, onCancel: callable):
     return dialog()[
-        FileSelector(path="."),
+        FileSelector(path=".", className="flex-1"),
         span()[
             span(className="flex-1"),
             button(on_click=lambda ev:onAccept())[
@@ -137,6 +140,8 @@ class App(Document):
                     lambda: self.setState({"openDialog": False}),
                     lambda: self.setState({"openDialog": False}),
                 ),
+                # div(style={"position": "absolute",
+                #     "top": 10, "left": 10, "background": "blue", "padding": 1, "border": 4, "borderColor": "#3355FF"})["Hola"]
             ],
             footer()["(C) 2023 | Coralbits SL | ",
                      str(self.state["keypress"])],

@@ -98,7 +98,7 @@ DEFAULT_CSS = {
         "position": "absolute",
         "background": "bg-tertiary",
         "color": "text-tertiary",
-        "padding":  "1 2 0 2",
+        "padding": "1 2 0 2",
         "border": 4,
         "borderColor": "text-primary",
         "left": 20,

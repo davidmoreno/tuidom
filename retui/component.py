@@ -440,11 +440,13 @@ class Component:
 
         width += (
             self.getStyle("paddingLeft", 0) +
-            self.getStyle("paddingRight", 0)
+            self.getStyle("paddingRight", 0) +
+            (self.getStyle("border", 0) and 2)
         )
         height += (
             self.getStyle("paddingTop", 0) +
-            self.getStyle("paddingBottom", 0)
+            self.getStyle("paddingBottom", 0) +
+            (self.getStyle("border", 0) and 2)
         )
 
         width = min(max_width, max(width, min_width))
@@ -548,13 +550,13 @@ class Component:
         x = (
             self.layout.x +
             self.getStyle("paddingLeft", 0) +
-            self.getStyle("border", 0)
+            (self.getStyle("border", 0) and 1)
         )
 
         y = (
             self.layout.y +
             self.getStyle("paddingTop", 0) +
-            self.getStyle("border", 0)
+            (self.getStyle("border", 0) and 1)
         )
 
         # print(self, x, y)
