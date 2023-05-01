@@ -13,14 +13,39 @@ class Event:
     target = None
 
 
-class EventClick(Event):
+class EventMouse(Event):
     buttons: list[int]
     position: tuple[int, int]
+    name = "mouse"
 
     def __init__(self, buttons: list[int], position: tuple[int, int]):
-        super().__init__("click")
+        super().__init__(self.name)
         self.buttons = buttons
         self.position = position
+
+    def __str__(self):
+        return f"clickevent buttons: {self.buttons}, x: {self.position[0]}, y: {self.position[1]}"
+
+
+class EventMouseDown(EventMouse):
+    name = "mousedown"
+
+    def __str__(self):
+        return f"mousedown buttons: {self.buttons}, x: {self.position[0]}, y: {self.position[1]}"
+
+
+class EventMouseUp(EventMouse):
+    name = "mouseup"
+
+    def __str__(self):
+        return f"mouseup buttons: {self.buttons}, x: {self.position[0]}, y: {self.position[1]}"
+
+
+class EventMouseClick(EventMouse):
+    name = "click"
+
+    def __str__(self):
+        return f"mouseclick buttons: {self.buttons}, x: {self.position[0]}, y: {self.position[1]}"
 
 
 class EventFocus(Event):

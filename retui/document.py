@@ -4,7 +4,7 @@ import logging
 from retui import defaults
 from retui.renderer import Renderer
 
-from .events import EventBlur, EventClick, EventExit, EventFocus, EventKeyPress, Event, HandleEventTrait
+from .events import EventBlur, EventMouseClick, EventExit, EventFocus, EventKeyPress, Event, HandleEventTrait
 from .component import Component
 
 logger = logging.getLogger(__name__)
@@ -82,31 +82,52 @@ class Document(HandleEventTrait, Component):
         if event.keycode == "RTAB":
             self.prevFocus()
         if event.keycode == "ENTER":
-            self.on_event(EventClick([1], (0, 0)))
+            self.on_event(EventMouseClick([1], (0, 0)))
 
     def on_event(self, ev: Event):
+        def handle_event(ev: Event):
+            if isinstance(ev, EventMouseClick):
+                el = ev.target
+                while el:
+                    if self.is_focusable(el):
+                        self.setFocus(el)
+                        break
+                    el = el.parent
+
+            name = f"on_{ev.name}"
+            el = ev.target
+            while el:
+                if isinstance(el, HandleEventTrait):
+                    event_handler = el.props.get(name)
+                    # logger.debug(f"Event {name} on {el}: {event_handler}")
+                    if event_handler:
+                        event_handler(ev)
+                    if ev.stopPropagation:
+                        return
+                el = el.parent
+
+        if isinstance(ev, EventMouseClick):
+            x, y = ev.position
+            for el in self.preorderTraversal():
+                inside = el.layout.inside(x, y)
+                if inside:
+                    ev.target = el
+
+            if ev.target:
+                handle_event(ev)
+
         if isinstance(ev, EventExit):
             self.stopLoop = ev
             return
 
-        name = ev.name
+        # for currently focused and parents
         if not ev.target:
             item = self.currentFocusedElement
             if not item:
                 item = self
             ev.target = item
-        else:
-            item = ev.target
 
-        while item:
-            if isinstance(item, HandleEventTrait):
-                event_handler = item.props.get(f"on_{name}")
-                # logger.debug(f"Event {name} on {item}: {event_handler}")
-                if event_handler:
-                    event_handler(ev)
-                if ev.stopPropagation:
-                    return
-            item = item.parent
+            handle_event(ev)
 
         # not handled
 
@@ -183,16 +204,16 @@ class Document(HandleEventTrait, Component):
             self.materialize()
             self.paint(renderer)
             try:
-                ev = renderer.readEvent()
-                if ev.name == "keypress" and ev.keycode == defaults.BREAKPOINT_KEYPRESS:
-                    renderer.breakpoint(
-                        callback=lambda: self.prettyPrint(),
-                        document=self
-                    )
-                elif isinstance(ev, EventExit):
-                    return ev
-                else:
-                    self.on_event(ev)
+                for ev in renderer.readEvents():
+                    if ev.name == "keypress" and ev.keycode == defaults.BREAKPOINT_KEYPRESS:
+                        renderer.breakpoint(
+                            callback=lambda: self.prettyPrint(),
+                            document=self
+                        )
+                    elif isinstance(ev, EventExit):
+                        return ev
+                    else:
+                        self.on_event(ev)
             except KeyboardInterrupt:
                 self.close()
                 raise

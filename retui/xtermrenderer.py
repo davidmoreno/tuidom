@@ -3,8 +3,9 @@ import shutil
 import sys
 import termios
 import tty
+from typing import Generator
 
-from .events import Event, EventExit, EventKeyPress
+from .events import Event, EventMouseClick, EventExit, EventKeyPress, EventMouseClick, EventMouseDown, EventMouseUp
 from .renderer import Renderer
 from .defaults import COLORS
 from retui import defaults
@@ -16,6 +17,7 @@ class XtermRenderer(Renderer):
     """
     stdout = None
     stdin = None
+    prev_mouse_buttons = 0
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -37,9 +39,11 @@ class XtermRenderer(Renderer):
             new = termios.tcgetattr(fd)
             new[3] = new[3] & ~(termios.ECHO | termios.ICANON)        # lflags
             termios.tcsetattr(fd, termios.TCSADRAIN, new)
+            print("\033[?1000h")
         else:
             fd = self.stdin.fileno()
             termios.tcsetattr(fd, termios.TCSADRAIN, self.oldtermios)
+            print("\033[?10001h")
 
     def pushScreen(self):
         # save screen state
@@ -62,13 +66,38 @@ class XtermRenderer(Renderer):
         self.captureKeyboard(False)
         self.popScreen()
 
-    def readEvent(self) -> Event:
+    def readEvents(self) -> Generator[Event, None, None]:
         try:
             key = os.read(self.stdin.fileno(), 10)
         except KeyboardInterrupt:
             return EventExit()
         if key in defaults.XTERM_KEYCODES:
             key = defaults.XTERM_KEYCODES[key]
+
+        elif key.startswith(b"\033[M"):
+            buttons = int(key[3])
+            if buttons == 32:
+                buttons = 1
+            if buttons == 34:
+                buttons = 2
+            if buttons == 35:
+                buttons = 0
+            if buttons:
+                yield EventMouseDown(
+                    buttons=buttons,
+                    position=(int(key[4])-32, int(key[5])-32)
+                )
+            else:
+                yield EventMouseUp(
+                    buttons=buttons,
+                    position=(int(key[4])-32, int(key[5])-32)
+                )
+                yield EventMouseClick(
+                    buttons=self.prev_mouse_buttons,
+                    position=(int(key[4])-32, int(key[5])-32)
+                )
+            self.prev_mouse_buttons = buttons
+            return
 
         elif len(key) == 1:
             if 0 < ord(key) < 27:
@@ -86,7 +115,7 @@ class XtermRenderer(Renderer):
             except:
                 pass
 
-        return EventKeyPress(key)
+        yield EventKeyPress(key)
 
     def rgbcolor(self, color: str):
         """

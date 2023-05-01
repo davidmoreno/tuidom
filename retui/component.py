@@ -36,6 +36,13 @@ class Layout:
     width: int = 0
     height: int = 0
 
+    def inside(self, x, y):
+        return (
+            (self.x <= x < (self.x + self.width))
+            and
+            (self.y <= y < (self.y + self.height))
+        )
+
 
 class Component:
     """

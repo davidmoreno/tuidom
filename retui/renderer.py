@@ -1,5 +1,6 @@
 
 import logging
+from typing import Generator
 
 from .events import Event, EventExit, EventKeyPress
 from . import defaults
@@ -56,8 +57,8 @@ class Renderer:
         """
         pass
 
-    def readEvent(self) -> Event:
-        return EventKeyPress("ESC")
+    def readEvents(self) -> Generator[Event, None, None]:
+        yield EventKeyPress("ESC")
 
     def breakpoint(self, callback=None, document=None):
         """

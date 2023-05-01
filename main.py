@@ -4,7 +4,7 @@ import logging
 import os
 
 from retui import Component, Document, XtermRenderer
-from retui.events import EventExit, EventKeyPress
+from retui.events import EventMouseClick, EventExit, EventKeyPress
 from retui.widgets import body, button, dialog, footer, select, header, option, div, span, input, textarea
 
 logger = logging.getLogger("main")
@@ -77,12 +77,19 @@ class App(Document):
         "openDialog": False,
     }
 
+    def __init__(self, **kwargs):
+        super().__init__(on_click=self.on_click, **kwargs)
+
     def on_keypress(self, ev: EventKeyPress):
         self.setState({"keypress": f"{ev.target.name} {ev.keycode}"})
         if ev.keycode == "ESC":
             self.quit()
             return
         super().on_keypress(ev)
+
+    def on_click(self, ev: EventMouseClick):
+        self.setState(
+            {"keypress": f"{ev.target and ev.target.name} {ev.buttons} {ev.position}"})
 
     def quit(self):
         self.document.on_event(EventExit(0))
