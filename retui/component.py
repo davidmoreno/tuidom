@@ -438,6 +438,15 @@ class Component:
             width, height = self.calculateLayoutSizesColumn(
                 0, 0, max_width_pb, max_height_pb)
 
+        width += (
+            self.getStyle("paddingLeft", 0) +
+            self.getStyle("paddingRight", 0)
+        )
+        height += (
+            self.getStyle("paddingTop", 0) +
+            self.getStyle("paddingBottom", 0)
+        )
+
         width = min(max_width, max(width, min_width))
         height = min(max_height, max(height, min_height))
 
@@ -461,7 +470,6 @@ class Component:
         width = min_width
         height = 0
         for child, _grow in fixed_children:
-
             child.calculateLayoutSizes(
                 0, 0,
                 max_width, max_height
@@ -609,10 +617,10 @@ class Paintable(HandleEventTrait, Component):
         background = self.getStyle("background")
         if background:
             renderer.fillStyle = background
-            renderer.strokeStyle = self.getStyle(
-                "borderColor") or self.getStyle("color")
             border = self.getStyle("border")
             if border:
+                renderer.strokeStyle = self.getStyle(
+                    "borderColor") or self.getStyle("color")
                 renderer.lineWidth = self.getStyle("border", 0)
                 renderer.fillStroke(
                     self.layout.x, self.layout.y,

@@ -152,10 +152,9 @@ class Document(HandleEventTrait, Component):
         renderer.fillRect(1, 1, renderer.width, renderer.height)
 
         bylayer = {0: []}
-        for child in self.preorderTraversal():
-            if child == self:  # skip me
-                continue
-            # child.paint(renderer)
+        elements = self.preorderTraversal()
+        next(elements)  # skip me
+        for child in elements:
             zIndex = child.getStyle("zIndex", 0) or 0
             if zIndex not in bylayer:
                 bylayer[zIndex] = []
