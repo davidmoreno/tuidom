@@ -72,7 +72,7 @@ class Document(HandleEventTrait, Component):
             self.on_event(EventBlur(self.currentFocusedElement))
         self.currentFocusedElement = el
         if el:
-            self.on_event(EventFocus(self.currentFocusedElement))
+            self.on_event(EventFocus(el))
 
         return el
 
@@ -108,13 +108,14 @@ class Document(HandleEventTrait, Component):
 
         if isinstance(ev, EventMouseClick):
             x, y = ev.position
+            z = -1000
             for el in self.preorderTraversal():
-                inside = el.layout.inside(x, y)
-                if inside:
-                    ev.target = el
-
-            if ev.target:
-                handle_event(ev)
+                elz = el.getStyle("zIndex") or 0
+                if elz >= z:
+                    inside = el.layout.inside(x, y)
+                    if inside:
+                        ev.target = el
+                        z = elz
 
         if isinstance(ev, EventExit):
             self.stopLoop = ev
@@ -127,6 +128,7 @@ class Document(HandleEventTrait, Component):
                 item = self
             ev.target = item
 
+        if ev.target:
             handle_event(ev)
 
         # not handled

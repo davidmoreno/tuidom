@@ -217,11 +217,15 @@ class select(Paintable):
 
     def render(self):
         if self.state["open"]:
-            return div(on_keypress=self.handleKeyPress)[
+            return div(
+                on_keypress=self.handleKeyPress,
+                # on_blur=lambda ev: self.setState({"open": False})
+            )[
                 Text(
+                    text=f" {self.props.get('label')} ",
                     style=self,
                     className="relative",
-                    on_click=self.handleOpenClose, text=f" {self.props.get('label')} ",
+                    on_click=self.handleOpenClose,
                 ),
                 div(
                     className="absolute z-100",
