@@ -99,7 +99,7 @@ DEFAULT_CSS = {
         "background": "bg-tertiary",
         "color": "text-tertiary",
         "padding": "1 2 0 2",
-        "border": 4,
+        "border": 1,
         "borderColor": "text-primary",
         "left": 20,
         "top": 30,

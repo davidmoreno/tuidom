@@ -51,6 +51,15 @@ class Renderer:
         """
         pass
 
+    def setBackgroundColor(self, color):
+        pass
+
+    def setForegroundColor(self, color):
+        pass
+
+    def setLineWidth(self, width):
+        pass
+
     def flush(self):
         """
         This pass is finished, flush data
@@ -76,3 +85,6 @@ class Renderer:
             "document": document,
             "renderer": self,
         })
+
+    def print(self, *str_or_list):
+        pass

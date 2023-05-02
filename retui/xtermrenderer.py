@@ -15,6 +15,10 @@ class XtermRenderer(Renderer):
     """
     Implementation for Xterm
     """
+    foreground = "white"
+    background = "blue"
+    lineWidth = 1  # depending on width the stroke will use diferent unicode chars
+
     stdout = None
     stdin = None
     prev_mouse_buttons = 0
@@ -82,19 +86,21 @@ class XtermRenderer(Renderer):
                 buttons = 2
             if buttons == 35:
                 buttons = 0
+            x = int(key[4])-33
+            y = int(key[5])-33
             if buttons:
                 yield EventMouseDown(
                     buttons=buttons,
-                    position=(int(key[4])-32, int(key[5])-32)
+                    position=(x, y)
                 )
             else:
                 yield EventMouseUp(
                     buttons=buttons,
-                    position=(int(key[4])-32, int(key[5])-32)
+                    position=(x, y)
                 )
                 yield EventMouseClick(
                     buttons=self.prev_mouse_buttons,
-                    position=(int(key[4])-32, int(key[5])-32)
+                    position=(x, y)
                 )
             self.prev_mouse_buttons = buttons
             return
@@ -133,7 +139,7 @@ class XtermRenderer(Renderer):
         return ';'.join(map(str, COLORS["black"]))
 
     def __set_color(self):
-        return f"\033[48;2;{self.rgbcolor(self.fillStyle)}m\033[38;2;{self.rgbcolor(self.strokeStyle)}m"
+        return f"\033[48;2;{self.rgbcolor(self.background)}m\033[38;2;{self.rgbcolor(self.foreground)}m"
 
     def fillText(self, text, x, y, bold=False, italic=False, underline=False):
         if y < 0 or y > self.height:
@@ -181,8 +187,21 @@ class XtermRenderer(Renderer):
     def setCursor(self, x, y):
         self.print(self.__set_cursor(x, y))
 
+    def setBackgroundColor(self, color):
+        if self.background != color:
+            self.background = color
+            self.print(self.__set_color())
+
+    def setForegroundColor(self, color):
+        if self.foreground != color:
+            self.foreground = color
+            self.print(self.__set_color())
+
+    def setLineWidth(self, width):
+        self.lineWidth = width
+
     def __set_cursor(self, x, y):
-        return f"\033[{y};{x}H",  # position
+        return f"\033[{y+1};{x+1}H",  # position
 
     def fillStroke(self, x, y, width, height):
         """
@@ -213,8 +232,8 @@ class XtermRenderer(Renderer):
     def breakpoint(self, callback=None, document=None):
         self.captureKeyboard(False)
 
-        self.strokeStyle = "white"
-        self.fillStyle = "black"
+        self.foreground = "white"
+        self.background = "black"
         self.setCursor(1, 1)
         self.fillRect(1, 1, self.width, self.height)
         super().breakpoint(callback, document)

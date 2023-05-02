@@ -140,8 +140,8 @@ class Document(HandleEventTrait, Component):
             renderer.width,
             renderer.height
         )
-        self.layout.y = 1
-        self.layout.x = 1
+        self.layout.y = 0
+        self.layout.x = 0
         self.calculateLayoutPosition()
         # for node in self.preorderTraversal():
         #     print(node, node.layout)
@@ -149,7 +149,7 @@ class Document(HandleEventTrait, Component):
 
         renderer.fillStyle = self.getStyle("background")
         renderer.strokeStyle = self.getStyle("color")
-        renderer.fillRect(1, 1, renderer.width, renderer.height)
+        renderer.fillRect(0, 0, renderer.width, renderer.height)
 
         bylayer = {0: []}
         elements = self.preorderTraversal()

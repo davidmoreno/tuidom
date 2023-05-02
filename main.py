@@ -4,6 +4,7 @@ import logging
 import os
 
 from retui import Component, Document, XtermRenderer
+from retui.bufferrenderer import BufferedRenderer
 from retui.events import EventMouseClick, EventExit, EventKeyPress
 from retui.widgets import body, button, dialog, footer, select, header, option, div, span, input, textarea
 
@@ -150,7 +151,7 @@ class App(Document):
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    renderer = XtermRenderer()
+    renderer = BufferedRenderer(XtermRenderer())
     root = App()
     root.loop(renderer)
 
