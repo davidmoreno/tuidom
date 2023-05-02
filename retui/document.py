@@ -18,6 +18,7 @@ class Document(HandleEventTrait, Component):
     name = "body"
     css = defaults.DEFAULT_CSS
     stopLoop: None | EventExit = None
+    cache = {}
 
     def __init__(self, children=None, *, css=None, **props):
         if children:
@@ -167,6 +168,7 @@ class Document(HandleEventTrait, Component):
 
         # super().paint(renderer)
         self.setCursor(renderer)
+        self.cache = {}
         renderer.flush()
 
     def setCursor(self, renderer: Renderer):

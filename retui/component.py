@@ -245,62 +245,106 @@ class Component:
             yield from child.preorderTraversal()
 
     def getStyle(self, csskey: StyleProperty, default=None):
+        key = f"{self.serialid}-{csskey}"
+        if key in self.document.cache:
+            return self.document.cache[key]
+
         if isinstance(self.props.get("style"), Component):
-            return self.props.get("style").getStyle(csskey, default)
+            val = self.props.get("style").getStyle(csskey, default)
+            self.document.cache[key] = val
+            return val
         if csskey == "paddingTop":
             val = self.__getStyle(csskey)
             if val is not None:
+                self.document.cache[key] = val
                 return val
             padding = self.__getStyle("padding")
             if isinstance(padding, int):
-                return padding
+                val = padding
+                self.document.cache[key] = val
+                return val
             if padding:
                 padding = padding.split()
-                return int(padding[0])
-            return default
+                val = int(padding[0])
+                self.document.cache[key] = val
+                return val
+            val = default
+            self.document.cache[key] = val
+            return val
         if csskey == "paddingRight":
             val = self.__getStyle(csskey)
             if val is not None:
+                self.document.cache[key] = val
                 return val
             padding = self.__getStyle("padding")
             if isinstance(padding, int):
-                return padding
+                val = padding
+                self.document.cache[key] = val
+                return val
             if padding:
                 padding = padding.split()
                 if len(padding) >= 2:
-                    return int(padding[1])
-                return int(padding[0])
-            return default
+                    val = int(padding[1])
+                    self.document.cache[key] = val
+                    return val
+                val = int(padding[0])
+                self.document.cache[key] = val
+                return val
+            val = default
+            self.document.cache[key] = val
+            return val
         if csskey == "paddingBottom":
             val = self.__getStyle(csskey)
             if val is not None:
+                self.document.cache[key] = val
                 return val
             padding = self.__getStyle("padding")
             if isinstance(padding, int):
-                return padding
+                val = padding
+                self.document.cache[key] = val
+                return val
             if padding:
                 padding = padding.split()
                 if len(padding) >= 3:
-                    return int(padding[2])
-                return int(padding[0])
-            return default
+                    val = int(padding[2])
+                    self.document.cache[key] = val
+                    return val
+                val = int(padding[0])
+                self.document.cache[key] = val
+                return val
+            val = default
+            self.document.cache[key] = val
+            return val
         if csskey == "paddingLeft":
             val = self.__getStyle(csskey)
             if val is not None:
+                self.document.cache[key] = val
                 return val
             padding = self.__getStyle("padding")
             if isinstance(padding, int):
-                return padding
+                val = padding
+                self.document.cache[key] = val
+                return val
             if padding:
                 padding = padding.split()
                 if len(padding) >= 4:
-                    return int(padding[3])
+                    val = int(padding[3])
+                    self.document.cache[key] = val
+                    return val
                 if len(padding) >= 2:
-                    return int(padding[1])
-                return int(padding[0])
-            return default
+                    val = int(padding[1])
+                    self.document.cache[key] = val
+                    return val
+                val = int(padding[0])
+                self.document.cache[key] = val
+                return val
+            val = default
+            self.document.cache[key] = val
+            return val
 
-        return self.__getStyle(csskey, default)
+        val = self.__getStyle(csskey, default)
+        self.document.cache[key] = val
+        return val
 
     def __getStyle(self, csskey: StyleProperty, default=None):
 
