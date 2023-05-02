@@ -19,8 +19,8 @@ class Renderer:
     The renderer is also in charge of reading events, 
     as keystrokes, mouse clicks and so on.
     """
-    strokeStyle = "white"
-    fillStyle = "blue"
+    foreground = "white"
+    background = "blue"
     lineWidth = 1  # depending on width the stroke will use diferent unicode chars
 
     width = 80
@@ -51,11 +51,11 @@ class Renderer:
         """
         pass
 
-    def setBackgroundColor(self, color):
-        pass
+    def setBackground(self, color):
+        self.background = color
 
-    def setForegroundColor(self, color):
-        pass
+    def setForeground(self, color):
+        self.foreground = color
 
     def setLineWidth(self, width):
         pass

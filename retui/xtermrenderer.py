@@ -163,7 +163,8 @@ class XtermRenderer(Renderer):
                 continue
             self.print(
                 self.__set_color(),
-                f"\033[{py};{x}H",  # position
+                self.__set_cursor(x, py),
+                # f"\033[{py};{x}H",  # position
                 line
             )
 
@@ -187,12 +188,12 @@ class XtermRenderer(Renderer):
     def setCursor(self, x, y):
         self.print(self.__set_cursor(x, y))
 
-    def setBackgroundColor(self, color):
+    def setBackground(self, color):
         if self.background != color:
             self.background = color
             self.print(self.__set_color())
 
-    def setForegroundColor(self, color):
+    def setForeground(self, color):
         if self.foreground != color:
             self.foreground = color
             self.print(self.__set_color())

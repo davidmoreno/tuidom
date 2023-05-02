@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from enum import Enum
 from typing import Generator, Tuple
 from retui.events import Event, EventKeyPress
 from retui.renderer import Renderer
@@ -6,21 +7,22 @@ from retui.renderer import Renderer
 
 @dataclass
 class ScreenChar:
+    class FontModifier(Enum):
+        BOLD = 1
+        ITALIC = 2
+        UNDERSCORE = 3
+
     char: str = " "
     bg: str = ""
     fg: str = ""
-    bold: bool = False
-    italic: bool = False
-    underline: bool = False
+    fontModifier: set[FontModifier] = field(default_factory=set)
 
     def update(self, **kwargs):
         return ScreenChar(
             char=kwargs.get("char", self.char),
             fg=kwargs.get("fg", self.fg),
             bg=kwargs.get("bg", self.bg),
-            bold=kwargs.get("bold", self.bold),
-            italic=kwargs.get("italic", self.italic),
-            underline=kwargs.get("underline", self.underline),
+            fontModifier=kwargs.get("fontModifier", self.fontModifier),
         )
 
 
@@ -52,8 +54,8 @@ class BufferedRenderer(Renderer):
     def fillRect(self, x, y, width, height):
         cur = ScreenChar(
             char=" ",
-            bg=self.fillStyle,
-            fg=self.strokeStyle,
+            bg=self.background,
+            fg=self.foreground,
         )
         for h in range(y, y+height):
             for p in range(self.pos(x, h), self.pos(x+width, h)):
@@ -67,11 +69,8 @@ class BufferedRenderer(Renderer):
             for n, c in enumerate(line):
                 self.screen[self.pos(x+n, py)] = ScreenChar(
                     c,
-                    bg=self.fillStyle,
-                    fg=self.strokeStyle,
-                    bold=bold,
-                    italic=italic,
-                    underline=underline,
+                    bg=self.background,
+                    fg=self.foreground,
                 )
 
     def fillStroke(self, x, y, width, height):
@@ -90,7 +89,7 @@ class BufferedRenderer(Renderer):
         elif self.lineWidth >= 4:
             table_chars = "▐▛▀▜▙▄▟▌"
 
-        sc = ScreenChar(bg=self.fillStyle, fg=self.strokeStyle)
+        sc = ScreenChar(bg=self.background, fg=self.foreground)
         self.screen[self.pos(x, y)] = sc.update(char=table_chars[1])
         for p in range(x+1, x+width-1):
             self.screen[self.pos(p, y)] = sc.update(char=table_chars[2])
@@ -124,21 +123,39 @@ class BufferedRenderer(Renderer):
         screen_back = self.screen_back
 
         pos = (-1, -1)
+        line = ""
+
+        def dumpline():
+            x, y = pos
+            nonlocal line
+            if line:
+                bold = ScreenChar.FontModifier.BOLD in cur.fontModifier
+                underline = ScreenChar.FontModifier.UNDERSCORE in cur.fontModifier
+                italic = ScreenChar.FontModifier.ITALIC in cur.fontModifier
+                self.renderer.fillText(line, x-1, y, bold=bold,
+                                       underline=underline, italic=italic)
+                line = ""
+
         for y in range(0, self.height):
             for x in range(0, self.width):
                 cur = screen[p]
                 prev = screen_back[p]
                 if cur != prev:
                     if pos != (x, y):
-                        self.renderer.setCursor(x, y)
+                        dumpline()
                         pos = (x, y)
                     if prev_char.bg != cur.bg:
-                        self.renderer.setBackgroundColor(cur.bg)
+                        dumpline()
+                        self.renderer.setBackground(cur.bg)
                     if prev_char.fg != cur.fg:
-                        self.renderer.setForegroundColor(cur.fg)
-                    self.renderer.print(cur.char)
+                        dumpline()
+                        self.renderer.setForeground(cur.fg)
+                    if prev_char.fontModifier != cur.fontModifier:
+                        dumpline()
+                    line += cur.char
                     pos = (x+1, y)
                 p += 1
+        dumpline()
 
         self.renderer.setCursor(*self.cursor)
         self.renderer.flush()

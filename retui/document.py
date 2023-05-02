@@ -147,8 +147,8 @@ class Document(HandleEventTrait, Component):
         #     print(node, node.layout)
         # return
 
-        renderer.fillStyle = self.getStyle("background")
-        renderer.strokeStyle = self.getStyle("color")
+        renderer.background = self.getStyle("background")
+        renderer.foreground = self.getStyle("color")
         renderer.fillRect(0, 0, renderer.width, renderer.height)
 
         bylayer = {0: []}

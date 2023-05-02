@@ -615,13 +615,13 @@ class Paintable(HandleEventTrait, Component):
     def paint(self, renderer: Renderer):
         color = self.getStyle("color")
         if color:
-            renderer.strokeStyle = color
+            renderer.foreground = color
         background = self.getStyle("background")
         if background:
-            renderer.fillStyle = background
+            renderer.background = background
             border = self.getStyle("border")
             if border:
-                renderer.strokeStyle = self.getStyle(
+                renderer.foreground = self.getStyle(
                     "borderColor") or self.getStyle("color")
                 renderer.lineWidth = self.getStyle("border", 0)
                 renderer.fillStroke(
@@ -645,10 +645,10 @@ class Text(Paintable):
         if text:
             color = self.getStyle("color")
             if color:
-                renderer.strokeStyle = color
+                renderer.setForeground(color)
             background = self.getStyle("background")
             if background:
-                renderer.fillStyle = background
+                renderer.setBackground(background)
             fontWeight = self.getStyle("font-weight")
             fontDecoration = self.getStyle("font-decoration")
             fontStyle = self.getStyle("font-style")

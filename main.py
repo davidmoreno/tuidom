@@ -152,6 +152,7 @@ class App(Document):
 def main():
     logging.basicConfig(level=logging.INFO)
     renderer = BufferedRenderer(XtermRenderer())
+    # renderer = XtermRenderer()
     root = App()
     root.loop(renderer)
 
