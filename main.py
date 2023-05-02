@@ -2,6 +2,7 @@
 
 import logging
 import os
+import sys
 
 from retui import Component, Document, XtermRenderer
 from retui.bufferrenderer import BufferedRenderer
@@ -151,8 +152,11 @@ class App(Document):
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    renderer = BufferedRenderer(XtermRenderer())
-    # renderer = XtermRenderer()
+    argv = sys.argv[1:]
+    if '--xterm' in argv:
+        renderer = XtermRenderer()
+    else:
+        renderer = BufferedRenderer(XtermRenderer())
     root = App()
     root.loop(renderer)
 

@@ -129,10 +129,12 @@ class BufferedRenderer(Renderer):
             x, y = pos
             nonlocal line
             if line:
-                bold = ScreenChar.FontModifier.BOLD in cur.fontModifier
-                underline = ScreenChar.FontModifier.UNDERSCORE in cur.fontModifier
-                italic = ScreenChar.FontModifier.ITALIC in cur.fontModifier
-                self.renderer.fillText(line, x-1, y, bold=bold,
+                self.renderer.setBackground(prev_char.bg)
+                self.renderer.setForeground(prev_char.fg)
+                bold = ScreenChar.FontModifier.BOLD in prev_char.fontModifier
+                underline = ScreenChar.FontModifier.UNDERSCORE in prev_char.fontModifier
+                italic = ScreenChar.FontModifier.ITALIC in prev_char.fontModifier
+                self.renderer.fillText(line, x-len(line), y, bold=bold,
                                        underline=underline, italic=italic)
                 line = ""
 
@@ -146,12 +148,13 @@ class BufferedRenderer(Renderer):
                         pos = (x, y)
                     if prev_char.bg != cur.bg:
                         dumpline()
-                        self.renderer.setBackground(cur.bg)
+                        prev_char = cur
                     if prev_char.fg != cur.fg:
                         dumpline()
-                        self.renderer.setForeground(cur.fg)
+                        prev_char = cur
                     if prev_char.fontModifier != cur.fontModifier:
                         dumpline()
+                        prev_char = cur
                     line += cur.char
                     pos = (x+1, y)
                 p += 1
