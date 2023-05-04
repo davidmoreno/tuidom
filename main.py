@@ -2,6 +2,7 @@
 
 import logging
 import os
+import pathlib
 import sys
 
 from retui import Component, Document, XtermRenderer
@@ -27,18 +28,28 @@ class CheckBox(Component):
 class FileSelector(Component):
     state = {
         "files": False,
+        "path": pathlib.Path("."),
     }
 
     def componentDidMount(self):
-        files = []
-        for filename in os.listdir(self.props.get("path", ".")):
-            files.append(filename)
-        self.setState({"files": files})
-
+        self.loadPath(pathlib.Path(self.props.get("path", ".")))
         self.document.setFocus(self)
 
+    def loadPath(self, path):
+        files = [".."]
+        for filename in os.listdir(path):
+            files.append(filename)
+        self.setState({"files": files, "path": path})
+
     def handleSelectedFile(self, filename):
-        pass
+        path = self.state["path"] / filename
+        if path.is_dir():
+            self.loadPath(path)
+            return
+
+        handle = self.props.get("on_change")
+        if handle:
+            handle(path)
 
     def handleKeyPress(self, ev: EventKeyPress):
         if not self.queryElement("button:focus"):
@@ -53,11 +64,13 @@ class FileSelector(Component):
         if self.state["files"] is False:
             return div()["Loading..."]
         return div(on_keypress=self.handleKeyPress, className="w-full flex-1")[
-            [button(
-                className="w-full",
-                on_click=lambda ev:self.handleSelectedFile(x),
-            )[x]
-                for x in self.state["files"]]
+            [
+                button(
+                    className="w-full",
+                    on_click=lambda ev:self.handleSelectedFile(filename),
+                )[filename]
+                for filename in self.state["files"]
+            ]
         ]
 
 

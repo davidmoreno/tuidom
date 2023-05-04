@@ -31,11 +31,20 @@ class BufferedRenderer(Renderer):
     screen: list[ScreenChar]
     screen_back: list[ScreenChar]
     cursor: Tuple[int, int] = (0, 0)
+    max_x: int
+    max_y: int
+    min_x: int
+    min_y: int
 
     def __init__(self, renderer: Renderer):
         self.renderer = renderer
         self.width = renderer.width
         self.height = renderer.height
+        self.max_x = self.width
+        self.max_y = self.height
+        self.min_x = 0
+        self.min_y = 0
+
         self.screen = [
             ScreenChar()
             for _ in range(0, self.width*self.height)
@@ -48,6 +57,30 @@ class BufferedRenderer(Renderer):
     def pos(self, x, y):
         return x + (y*self.width)
 
+    def clip(self, x, y):
+        if x < self.min_x:
+            x = self.min_x
+        elif x > self.max_x:
+            x = self.max_x
+        if y < self.min_y:
+            y = self.min_y
+        elif y > self.max_y:
+            y = self.max_y
+
+        return x, y
+
+    def drawChar(self, x: int, y: int, char: ScreenChar):
+        if x < self.min_x:
+            return False
+        elif x > self.max_x:
+            return False
+        if y < self.min_y:
+            return False
+        elif y > self.max_y:
+            return False
+
+        self.screen[self.pos(x, y)] = char
+
     def setCursor(self, x, y):
         self.cursor = (x, y)
 
@@ -57,8 +90,18 @@ class BufferedRenderer(Renderer):
             bg=self.background,
             fg=self.foreground,
         )
-        for h in range(y, y+height):
-            for p in range(self.pos(x, h), self.pos(x+width, h)):
+        mx = x + width
+        my = y + height
+        if x > self.max_x or x < self.min_x:
+            return
+        if y > self.max_y or y < self.min_y:
+            return
+
+        x, y = self.clip(x, y)
+        mx, my = self.clip(x+width, y+height)
+
+        for h in range(y, my):
+            for p in range(self.pos(x, h), self.pos(mx, h)):
                 self.screen[p] = cur
 
     def fillText(self, text, x, y, bold=False, italic=False, underline=False):
@@ -67,11 +110,11 @@ class BufferedRenderer(Renderer):
             if py < 0 or py > self.height:
                 continue
             for n, c in enumerate(line):
-                self.screen[self.pos(x+n, py)] = ScreenChar(
+                self.drawChar(x+n, py, ScreenChar(
                     c,
                     bg=self.background,
                     fg=self.foreground,
-                )
+                ))
 
     def fillStroke(self, x, y, width, height):
         """
@@ -90,21 +133,20 @@ class BufferedRenderer(Renderer):
             table_chars = "▐▛▀▜▙▄▟▌"
 
         sc = ScreenChar(bg=self.background, fg=self.foreground)
-        self.screen[self.pos(x, y)] = sc.update(char=table_chars[1])
+        self.drawChar(x, y, sc.update(char=table_chars[1]))
         for p in range(x+1, x+width-1):
-            self.screen[self.pos(p, y)] = sc.update(char=table_chars[2])
-        self.screen[self.pos(x+width-1, y)] = sc.update(char=table_chars[3])
+            self.drawChar(p, y, sc.update(char=table_chars[2]))
+        self.drawChar(x+width-1, y, sc.update(char=table_chars[3]))
 
         for ny in range(y+1, y+height):
-            self.screen[self.pos(x, ny)] = sc.update(char=table_chars[7])
-            self.screen[self.pos(x+width-1, ny)
-                        ] = sc.update(char=table_chars[0])
+            self.drawChar(x, ny, sc.update(char=table_chars[7]))
+            self.drawChar(x+width-1, ny, sc.update(char=table_chars[0]))
 
         ny = y+height-1
-        self.screen[self.pos(x, ny)] = sc.update(char=table_chars[4])
+        self.drawChar(x, ny, sc.update(char=table_chars[4]))
         for p in range(x+1, x+width-1):
-            self.screen[self.pos(p, ny)] = sc.update(char=table_chars[5])
-        self.screen[self.pos(x+width-1, ny)] = sc.update(char=table_chars[6])
+            self.drawChar(p, ny, sc.update(char=table_chars[5]))
+        self.drawChar(x+width-1, ny, sc.update(char=table_chars[6]))
 
     def readEvents(self) -> Generator[Event, None, None]:
         for ev in self.renderer.readEvents():
