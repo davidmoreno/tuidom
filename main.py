@@ -76,7 +76,7 @@ class FileSelector(Component):
 
 def OpenfileDialog(onAccept: callable, onCancel: callable):
     return dialog()[
-        FileSelector(path=".", className="flex-1"),
+        FileSelector(path="..", className="flex-1"),
         span()[
             span(className="flex-1"),
             button(on_click=lambda ev:onAccept())[
@@ -148,8 +148,8 @@ class App(Document):
                 ),
                 textarea(
                     className="bg-tertiary text-tertiary w-full",
-                    rows=4,
-                    maxRows=4,
+                    rows=10,
+                    maxRows=10,
                 ),
                 self.state["openDialog"] and OpenfileDialog(
                     lambda: self.setState({"openDialog": False}),

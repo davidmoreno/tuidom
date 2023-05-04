@@ -72,11 +72,11 @@ class BufferedRenderer(Renderer):
     def drawChar(self, x: int, y: int, char: ScreenChar):
         if x < self.min_x:
             return False
-        elif x > self.max_x:
+        elif x >= self.max_x:
             return False
         if y < self.min_y:
             return False
-        elif y > self.max_y:
+        elif y >= self.max_y:
             return False
 
         self.screen[self.pos(x, y)] = char

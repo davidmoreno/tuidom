@@ -88,6 +88,8 @@ DEFAULT_CSS = {
     "textarea": {
         "background": "text-secondary",
         "color": "bg-secondary",
+        # "overflowY": "scroll",
+        # "overflowX": "scroll",
     },
     "textarea:focus": {
         "background": "bg-secondary",
@@ -101,8 +103,8 @@ DEFAULT_CSS = {
         "padding": "1 2 0 2",
         "border": 1,
         "borderColor": "text-primary",
-        "left": 20,
-        "top": 30,
+        "left": 10,
+        "top": 10,
         "width": 50,
         "height": 20,
     },
@@ -144,6 +146,9 @@ DEFAULT_CSS = {
     },
     ".cursor-hidden": {
         "cursor": "hidden",
+    },
+    ".scroll-y": {
+        "overflowY": "scroll",
     }
 }
 

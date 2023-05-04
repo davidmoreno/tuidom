@@ -485,7 +485,8 @@ class Component:
         width += (
             self.getStyle("paddingLeft", 0) +
             self.getStyle("paddingRight", 0) +
-            (self.getStyle("border", 0) and 2)
+            (self.getStyle("border", 0) and 2) +
+            (1 if self.getStyle("overflowY") == "scroll" else 0)
         )
         height += (
             self.getStyle("paddingTop", 0) +
@@ -664,6 +665,7 @@ class Paintable(HandleEventTrait, Component):
         if background:
             renderer.setBackground(background)
             border = self.getStyle("border")
+
             if border:
                 renderer.setForeground(
                     self.getStyle("borderColor") or self.getStyle("color")
@@ -678,6 +680,45 @@ class Paintable(HandleEventTrait, Component):
                     self.layout.x, self.layout.y,
                     self.layout.width, self.layout.height,
                 )
+
+            scrollbar = "▲┃█▼◀━█▶"
+            scrollbar = "▕▕█▕▁▁▄▁"
+            # scrollbar = "  █   █ "
+            # scrollbar = "┃┃█┃━━◼━"
+            has_scrollbar_y = self.getStyle("overflowY") == "scroll"
+            if has_scrollbar_y:
+                x = self.layout.x + self.layout.width - 1
+                miny = self.layout.y
+                maxy = self.layout.y + self.layout.height - 1
+                if border:
+                    miny += 1
+                    maxy -= 1
+                if miny + 2 < maxy:
+                    renderer.fillText(scrollbar[0], x, miny)
+                    for y in range(miny+1, maxy):
+                        renderer.fillText(scrollbar[1], x, y)
+                    for y in range(miny+3, miny+5):
+                        renderer.fillText(scrollbar[2], x, y)
+
+                    renderer.fillText(scrollbar[3], x, maxy)
+
+            has_scrollbar_x = self.getStyle("overflowX") == "scroll"
+            if has_scrollbar_x:
+                y = self.layout.y + self.layout.height - 1
+                minx = self.layout.x
+                maxx = self.layout.x + self.layout.width - 1
+                if border:
+                    minx += 1
+                    maxx -= 1
+                if minx + 2 < maxx:
+                    renderer.fillText(scrollbar[4], minx, y)
+                    for x in range(minx+1, maxx):
+                        renderer.fillText(scrollbar[5], x, y)
+                    for x in range(minx+3, minx+40):
+                        renderer.fillText(scrollbar[6], x, y)
+
+                    renderer.fillText(scrollbar[7], maxx, y)
+
         # super().paint(renderer)
 
 
