@@ -8,7 +8,19 @@ import sys
 from retui import Component, Document, XtermRenderer
 from retui.bufferrenderer import BufferedRenderer
 from retui.events import EventMouseClick, EventExit, EventKeyPress
-from retui.widgets import body, button, dialog, footer, select, header, option, div, span, input, textarea
+from retui.widgets import (
+    body,
+    button,
+    dialog,
+    footer,
+    select,
+    header,
+    option,
+    div,
+    span,
+    input,
+    textarea,
+)
 
 logger = logging.getLogger("main")
 
@@ -16,13 +28,9 @@ logger = logging.getLogger("main")
 class CheckBox(Component):
     def render(self):
         logger.debug("Render Checkbox %s: %s", self, self.props)
-        return (
-            span(
-                on_click=self.props["on_click"]
-            )[
-                self.props["value"] and "[x]" or "[ ]"
-            ]
-        )
+        return span(on_click=self.props["on_click"])[
+            self.props["value"] and "[x]" or "[ ]"
+        ]
 
 
 class FileSelector(Component):
@@ -67,7 +75,7 @@ class FileSelector(Component):
             [
                 button(
                     className="w-full",
-                    on_click=lambda ev:self.handleSelectedFile(filename),
+                    on_click=lambda ev: self.handleSelectedFile(filename),
                 )[filename]
                 for filename in self.state["files"]
             ]
@@ -79,12 +87,10 @@ def OpenfileDialog(onAccept: callable, onCancel: callable):
         FileSelector(path="..", className="flex-1"),
         span()[
             span(className="flex-1"),
-            button(on_click=lambda ev:onAccept())[
-                " Accept "],
+            button(on_click=lambda ev: onAccept())[" Accept "],
             " ",
-            button(on_click=lambda ev:onCancel())[
-                " Cancel "],
-        ]
+            button(on_click=lambda ev: onCancel())[" Cancel "],
+        ],
     ]
 
 
@@ -92,7 +98,7 @@ class App(Document):
     state = {
         "is_on": True,
         "keypress": None,
-        "openDialog": False,
+        "openDialog": True,
     }
 
     def __init__(self, **kwargs):
@@ -107,7 +113,8 @@ class App(Document):
 
     def on_click(self, ev: EventMouseClick):
         self.setState(
-            {"keypress": f"{ev.target and ev.target.name} {ev.buttons} {ev.position}"})
+            {"keypress": f"{ev.target and ev.target.name} {ev.buttons} {ev.position}"}
+        )
 
     def quit(self):
         self.document.on_event(EventExit(0))
@@ -117,7 +124,7 @@ class App(Document):
             header()[
                 select(
                     label="File",
-                    on_change=lambda ev: self.setState({"openDialog": True})
+                    on_change=lambda ev: self.setState({"openDialog": True}),
                 )[
                     option(value="open")["Open..."],
                     option(value="close")["Close"],
@@ -129,9 +136,7 @@ class App(Document):
                     option()["Cut"],
                 ],
                 div(className="flex-1"),
-                button(on_click=lambda ev:self.quit())[
-                    "Quit"
-                ]
+                button(on_click=lambda ev: self.quit())["Quit"],
             ],
             body()[
                 # FileSelector(path="."),
@@ -141,32 +146,31 @@ class App(Document):
                         value=self.state["is_on"],
                         on_click=lambda ev: self.setState(
                             {"is_on": not self.state["is_on"]}
-                        )
-                    )],
-                input(
-                    className="bg-tertiary text-tertiary w-full"
-                ),
+                        ),
+                    ),
+                ],
+                input(className="bg-tertiary text-tertiary w-full"),
                 textarea(
                     className="bg-tertiary text-tertiary w-full",
                     rows=10,
                     maxRows=10,
                 ),
-                self.state["openDialog"] and OpenfileDialog(
+                self.state["openDialog"]
+                and OpenfileDialog(
                     lambda: self.setState({"openDialog": False}),
                     lambda: self.setState({"openDialog": False}),
                 ),
                 # div(style={"position": "absolute",
                 #     "top": 10, "left": 10, "background": "blue", "padding": 1, "border": 4, "borderColor": "#3355FF"})["Hola"]
             ],
-            footer()["(C) 2023 | Coralbits SL | ",
-                     str(self.state["keypress"])],
+            footer()["(C) 2023 | Coralbits SL | ", str(self.state["keypress"])],
         ]
 
 
 def main():
     logging.basicConfig(level=logging.INFO)
     argv = sys.argv[1:]
-    if '--xterm' in argv:
+    if "--xterm" in argv:
         renderer = XtermRenderer()
     else:
         renderer = BufferedRenderer(XtermRenderer())
@@ -174,5 +178,5 @@ def main():
     root.loop(renderer)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

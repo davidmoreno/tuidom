@@ -11,7 +11,6 @@ COLORS = {
     "bg-secondary": "#FBCB0A",
     "bg-tertiary": "#C70A80",
     "bg-quaternary": "#37E2D5",
-
     "fg": "#FAFAFA",
     "text-primary": "#ffffff",
     "text-secondary": "#000000",
@@ -96,7 +95,7 @@ DEFAULT_CSS = {
         "color": "text-secondary",
     },
     "dialog": {
-        "zIndex": 100,
+        "zIndex": 3,
         "position": "absolute",
         "background": "bg-tertiary",
         "color": "text-tertiary",
@@ -118,10 +117,10 @@ DEFAULT_CSS = {
         "zIndex": 1,
     },
     ".z-10": {
-        "zIndex": 10,
+        "zIndex": 2,
     },
     ".z-100": {
-        "zIndex": 100,
+        "zIndex": 3,
     },
     ".w-full": {
         "width": "100%",
@@ -149,7 +148,7 @@ DEFAULT_CSS = {
     },
     ".scroll-y": {
         "overflowY": "scroll",
-    }
+    },
 }
 
 
@@ -168,7 +167,7 @@ XTERM_KEYCODES = {
     b"\x1b[24~": "F12",
     b"\x7f": "DEL",
     b"\t": "TAB",
-    b'\x1b[Z': "RTAB",
+    b"\x1b[Z": "RTAB",
     b"\n": "ENTER",
     b"\x01": "CONTROL-A",
     b"\x02": "CONTROL-B",
@@ -197,7 +196,6 @@ XTERM_KEYCODES = {
     b"\x19": "CONTROL-Y",
     b"\x1a": "CONTROL-Z",
     b"\x1b": "ESC",
-
     b"\x1b[H": "START",
     b"\x1b[F": "END",
     b"\x1b[5~": "PAGE UP",
@@ -206,11 +204,9 @@ XTERM_KEYCODES = {
     b"\x1b[B": "DOWN",
     b"\x1b[C": "RIGHT",
     b"\x1b[D": "LEFT",
-    b'\x1b[3~': "SUPR",
-
-    b'\x1b[1;5C': "CONTROL-RIGHT",
-    b'\x1b[1;5D': "CONTROL-LEFT",
-
+    b"\x1b[3~": "SUPR",
+    b"\x1b[1;5C": "CONTROL-RIGHT",
+    b"\x1b[1;5D": "CONTROL-LEFT",
 }
 
 BREAKPOINT_KEYPRESS = "F12"

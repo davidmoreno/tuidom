@@ -1,10 +1,17 @@
-
 import logging
 
 from retui import defaults
 from retui.renderer import Renderer
 
-from .events import EventBlur, EventMouseClick, EventExit, EventFocus, EventKeyPress, Event, HandleEventTrait
+from .events import (
+    EventBlur,
+    EventMouseClick,
+    EventExit,
+    EventFocus,
+    EventKeyPress,
+    Event,
+    HandleEventTrait,
+)
 from .component import Component
 
 logger = logging.getLogger(__name__)
@@ -14,6 +21,7 @@ class Document(HandleEventTrait, Component):
     """
     A component with some extra methods
     """
+
     currentFocusedElement = None
     name = "body"
     css = defaults.DEFAULT_CSS
@@ -27,10 +35,7 @@ class Document(HandleEventTrait, Component):
                 "children": children,
             }
         if css:
-            self.css = {
-                **defaults.DEFAULT_CSS,
-                **css
-            }
+            self.css = {**defaults.DEFAULT_CSS, **css}
         super().__init__(**props)
         self.props = {
             "on_keypress": self.on_keypress,
@@ -135,12 +140,7 @@ class Document(HandleEventTrait, Component):
         # not handled
 
     def paint(self, renderer: Renderer):
-        self.calculateLayoutSizes(
-            0,
-            0,
-            renderer.width,
-            renderer.height
-        )
+        self.calculateLayoutSizes(0, 0, renderer.width, renderer.height)
         self.layout.y = 0
         self.layout.x = 0
         self.calculateLayoutPosition()
@@ -152,19 +152,7 @@ class Document(HandleEventTrait, Component):
         renderer.setForeground(self.getStyle("color"))
         renderer.fillRect(0, 0, renderer.width, renderer.height)
 
-        bylayer = {0: []}
-        elements = self.preorderTraversal()
-        next(elements)  # skip me
-        for child in elements:
-            zIndex = child.getStyle("zIndex", 0) or 0
-            if zIndex not in bylayer:
-                bylayer[zIndex] = []
-            bylayer[zIndex].append(child)
-
-        for zIndex, paintlist in sorted(bylayer.items()):
-            for child in paintlist:
-                # print(zIndex, child, child.layout)
-                child.paint(renderer)
+        super().paint(renderer)
 
         # super().paint(renderer)
         self.setCursor(renderer)
@@ -208,10 +196,12 @@ class Document(HandleEventTrait, Component):
             self.paint(renderer)
             try:
                 for ev in renderer.readEvents():
-                    if ev.name == "keypress" and ev.keycode == defaults.BREAKPOINT_KEYPRESS:
+                    if (
+                        ev.name == "keypress"
+                        and ev.keycode == defaults.BREAKPOINT_KEYPRESS
+                    ):
                         renderer.breakpoint(
-                            callback=lambda: self.prettyPrint(),
-                            document=self
+                            callback=lambda: self.prettyPrint(), document=self
                         )
                     elif isinstance(ev, EventExit):
                         return ev

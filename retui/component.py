@@ -1,5 +1,3 @@
-
-
 from dataclasses import dataclass
 import itertools
 import logging
@@ -8,10 +6,12 @@ import re
 from typing import Literal
 from .events import HandleEventTrait
 from .renderer import Renderer
+
 logger = logging.getLogger(__name__)
 
 CSS_SELECTOR_RE = re.compile(
-    r"^(?P<name>\w+|)(?P<pseudo>(:\w+)*)(?P<id>#\w+|)(?P<class>(\.(\w|[-_])+)*)$")
+    r"^(?P<name>\w+|)(?P<pseudo>(:\w+)*)(?P<id>#\w+|)(?P<class>(\.(\w|[-_])+)*)$"
+)
 
 StyleProperty = Literal[
     "color",
@@ -22,11 +22,10 @@ StyleProperty = Literal[
     "border",
     "width",
     "height",
-    "zIndex",
 ]
 
 # this styles are checked against parents if not defined
-INHERITABLE_STYLES: list[StyleProperty] = ["color", "background", "zIndex"]
+INHERITABLE_STYLES: list[StyleProperty] = ["color", "background"]
 
 
 @dataclass
@@ -37,10 +36,8 @@ class Layout:
     height: int = 0
 
     def inside(self, x, y):
-        return (
-            (self.x <= x < (self.x + self.width))
-            and
-            (self.y <= y < (self.y + self.height))
+        return (self.x <= x < (self.x + self.width)) and (
+            self.y <= y < (self.y + self.height)
         )
 
 
@@ -50,6 +47,7 @@ class Component:
     * style -- Dict of styles | another component to get styles from it. See select
     * className - List of classnames
     """
+
     serialid = 0  # just for debugging, to ensure materialize reuses as possible
     name = None
     props: dict = None
@@ -89,7 +87,9 @@ class Component:
         if not children:
             return f"<{self.name}{ids} {self.serialid}/>"
         else:
-            return f"<{self.name}{ids} {self.serialid}>...{len(children)}...</{self.name}>"
+            return (
+                f"<{self.name}{ids} {self.serialid}>...{len(children)}...</{self.name}>"
+            )
 
     def componentDidMount(self):
         pass
@@ -98,7 +98,13 @@ class Component:
         return self.props.get("children", [])
 
     def paint(self, renderer: Renderer):
-        pass
+        zIndex = self.getStyle("zIndex")
+        if zIndex is not None:
+            renderer.addZIndex(zIndex)
+        for child in self.children:
+            child.paint(renderer)
+        if zIndex is not None:
+            renderer.addZIndex(-zIndex)
 
     def setChanged(self):
         if self.__changed:
@@ -125,9 +131,7 @@ class Component:
         ret = []
         for item in nodes:
             if isinstance(item, Component):
-                item.props["children"] = self.normalize(
-                    item.props.get("children", [])
-                )
+                item.props["children"] = self.normalize(item.props.get("children", []))
                 ret.append(item)
             elif item is True:
                 ret.append(Text(text=True))
@@ -149,11 +153,7 @@ class Component:
                 child.document = self.document
             self.children = children
         else:
-            nextchildren = self.reconcile(
-                self,
-                self.children,
-                children
-            )
+            nextchildren = self.reconcile(self, self.children, children)
 
             self.children = nextchildren
 
@@ -347,7 +347,6 @@ class Component:
         return val
 
     def __getStyle(self, csskey: StyleProperty, default=None):
-
         style = self.props.get("style")
         if style:
             value = style.get(csskey)
@@ -372,7 +371,7 @@ class Component:
         """
         Very simple selectors. Simple classnames, type and ids. Not nested.
 
-        Returns 0 if no match, if not a priority number, the 
+        Returns 0 if no match, if not a priority number, the
         highest more priority
 
         Priority based on https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity
@@ -400,7 +399,7 @@ class Component:
             for clss in classes:
                 if clss not in class_name:
                     return 0
-            pri += 10*len(classes)
+            pri += 10 * len(classes)
         if mdict["pseudo"]:
             pri += 1
             for pseudo in mdict["pseudo"].split(":")[1:]:
@@ -442,7 +441,7 @@ class Component:
         """
         Calculates the layout inside the desired rectangle.
 
-        Given the given constraints, sets own size. 
+        Given the given constraints, sets own size.
         Once we have the size, position is calculated later.
         """
         min_width = self.getStyle("minWidth") or min_width
@@ -464,34 +463,32 @@ class Component:
             border = 2
 
         max_width_pb = max_width - (
-            self.getStyle("paddingLeft", 0) +
-            self.getStyle("paddingRight", 0) +
-            border
+            self.getStyle("paddingLeft", 0) + self.getStyle("paddingRight", 0) + border
         )
         max_height_pb = max_height - (
-            self.getStyle("paddingTop", 0) +
-            self.getStyle("paddingBottom", 0) +
-            border
+            self.getStyle("paddingTop", 0) + self.getStyle("paddingBottom", 0) + border
         )
 
         direction = self.getStyle("flex-direction")
         if direction == "row":
             width, height = self.calculateLayoutSizesRow(
-                0, 0, max_width_pb, max_height_pb)
+                0, 0, max_width_pb, max_height_pb
+            )
         else:  # default for even unknown is vertical stack
             width, height = self.calculateLayoutSizesColumn(
-                0, 0, max_width_pb, max_height_pb)
+                0, 0, max_width_pb, max_height_pb
+            )
 
         width += (
-            self.getStyle("paddingLeft", 0) +
-            self.getStyle("paddingRight", 0) +
-            (self.getStyle("border", 0) and 2) +
-            (1 if self.getStyle("overflowY") == "scroll" else 0)
+            self.getStyle("paddingLeft", 0)
+            + self.getStyle("paddingRight", 0)
+            + (self.getStyle("border", 0) and 2)
+            + (1 if self.getStyle("overflowY") == "scroll" else 0)
         )
         height += (
-            self.getStyle("paddingTop", 0) +
-            self.getStyle("paddingBottom", 0) +
-            (self.getStyle("border", 0) and 2)
+            self.getStyle("paddingTop", 0)
+            + self.getStyle("paddingBottom", 0)
+            + (self.getStyle("border", 0) and 2)
         )
 
         width = min(max_width, max(width, min_width))
@@ -503,10 +500,7 @@ class Component:
         return (width, height)
 
     def split_fixed_variable_children(self):
-        children_grow = [
-            (x, x.getStyle("flex-grow"))
-            for x in self.children
-        ]
+        children_grow = [(x, x.getStyle("flex-grow")) for x in self.children]
         fixed = [x for x in children_grow if not x[1]]
         variable = [x for x in children_grow if x[1]]
         return fixed, variable
@@ -517,16 +511,13 @@ class Component:
         width = min_width
         height = 0
         for child, _grow in fixed_children:
-            child.calculateLayoutSizes(
-                0, 0,
-                max_width, max_height
-            )
+            child.calculateLayoutSizes(0, 0, max_width, max_height)
 
             childposition = child.getStyle("position")
             if childposition != "absolute":
                 height += child.layout.height
                 width = max(width, child.layout.width)
-                max_height = max_height-child.layout.height
+                max_height = max_height - child.layout.height
                 min_width = max(min_width, width)
 
         if variable_children:
@@ -535,14 +526,16 @@ class Component:
             for child, grow in variable_children:
                 cheight = math.floor(quant_size * grow)
                 child.calculateLayoutSizes(
-                    min_width, cheight,  # fixed height
-                    max_width, cheight,
+                    min_width,
+                    cheight,  # fixed height
+                    max_width,
+                    cheight,
                 )
                 childposition = child.getStyle("position")
                 if childposition != "absolute":
                     height += child.layout.height
                     width = max(width, child.layout.width)
-                    max_height = max_height-child.layout.height
+                    max_height = max_height - child.layout.height
                     min_width = max(min_width, width)
 
         # this is equivalent to align items stretch
@@ -559,13 +552,10 @@ class Component:
         height = min_height
 
         for child, _grow in fixed_children:
-            child.calculateLayoutSizes(
-                0, 0,
-                max_width, max_height
-            )
+            child.calculateLayoutSizes(0, 0, max_width, max_height)
             width += child.layout.width
             height = max(height, child.layout.height)
-            max_width = max_width-child.layout.width
+            max_width = max_width - child.layout.width
             min_height = max(min_height, height)
 
         if variable_children:
@@ -574,12 +564,14 @@ class Component:
             for child, grow in variable_children:
                 cwidth = math.floor(quant_size * grow)
                 child.calculateLayoutSizes(
-                    cwidth, min_width,   # fixed width
-                    cwidth, max_width,
+                    cwidth,
+                    min_width,  # fixed width
+                    cwidth,
+                    max_width,
                 )
                 width += child.layout.width
                 height = max(height, child.layout.height)
-                max_width = max_width-child.layout.width
+                max_width = max_width - child.layout.width
                 min_height = max(min_height, height)
 
         # this is equivalent to align items stretch
@@ -593,15 +585,15 @@ class Component:
         """
 
         x = (
-            self.layout.x +
-            self.getStyle("paddingLeft", 0) +
-            (self.getStyle("border", 0) and 1)
+            self.layout.x
+            + self.getStyle("paddingLeft", 0)
+            + (self.getStyle("border", 0) and 1)
         )
 
         y = (
-            self.layout.y +
-            self.getStyle("paddingTop", 0) +
-            (self.getStyle("border", 0) and 1)
+            self.layout.y
+            + self.getStyle("paddingTop", 0)
+            + (self.getStyle("border", 0) and 1)
         )
 
         # print(self, x, y)
@@ -610,12 +602,14 @@ class Component:
             childposition = child.getStyle("position")
 
             if childposition == "absolute":
-                child.layout.y = self.calculateProportion(
-                    self.layout.width, child.getStyle("top")
-                ) or y
-                child.layout.x = self.calculateProportion(
-                    self.layout.width, child.getStyle("left")
-                ) or x
+                child.layout.y = (
+                    self.calculateProportion(self.layout.width, child.getStyle("top"))
+                    or y
+                )
+                child.layout.x = (
+                    self.calculateProportion(self.layout.width, child.getStyle("left"))
+                    or x
+                )
                 child.calculateLayoutPosition()
             else:
                 child.layout.y = y
@@ -629,24 +623,29 @@ class Component:
     def prettyPrint(self, indent=0):
         def printable(v):
             if callable(v):
-                return '[callable]'
+                return "[callable]"
             if isinstance(v, str):
                 return f'"{v}"'
             return str(v)
-        props = ' '.join([
-            f"{k}={printable(v)}"
-            for k, v in self.props.items()
-            if k != 'children'
-        ])
-        state = self.state and ' '.join([
-            f"{k}={printable(v)}"
-            for k, v in self.state.items()
-            if k != 'children'
-        ]) or ""
+
+        props = " ".join(
+            [f"{k}={printable(v)}" for k, v in self.props.items() if k != "children"]
+        )
+        state = (
+            self.state
+            and " ".join(
+                [
+                    f"{k}={printable(v)}"
+                    for k, v in self.state.items()
+                    if k != "children"
+                ]
+            )
+            or ""
+        )
         if self.children:
             print(f'{" " * indent}<{self.name} {props} {state}>')
             for child in self.children:
-                child.prettyPrint(indent+2)
+                child.prettyPrint(indent + 2)
             print(f'{" " * indent}</{self.name}>')
         else:
             print(f'{" " * indent}<{self.name} {props} {state}/>')
@@ -672,13 +671,17 @@ class Paintable(HandleEventTrait, Component):
                 )
                 renderer.setLineWidth(self.getStyle("border", 0))
                 renderer.fillStroke(
-                    self.layout.x, self.layout.y,
-                    self.layout.width, self.layout.height,
+                    self.layout.x,
+                    self.layout.y,
+                    self.layout.width,
+                    self.layout.height,
                 )
             else:
                 renderer.fillRect(
-                    self.layout.x, self.layout.y,
-                    self.layout.width, self.layout.height,
+                    self.layout.x,
+                    self.layout.y,
+                    self.layout.width,
+                    self.layout.height,
                 )
 
             scrollbar = "▲┃█▼◀━█▶"
@@ -695,9 +698,9 @@ class Paintable(HandleEventTrait, Component):
                     maxy -= 1
                 if miny + 2 < maxy:
                     renderer.fillText(scrollbar[0], x, miny)
-                    for y in range(miny+1, maxy):
+                    for y in range(miny + 1, maxy):
                         renderer.fillText(scrollbar[1], x, y)
-                    for y in range(miny+3, miny+5):
+                    for y in range(miny + 3, miny + 5):
                         renderer.fillText(scrollbar[2], x, y)
 
                     renderer.fillText(scrollbar[3], x, maxy)
@@ -712,14 +715,13 @@ class Paintable(HandleEventTrait, Component):
                     maxx -= 1
                 if minx + 2 < maxx:
                     renderer.fillText(scrollbar[4], minx, y)
-                    for x in range(minx+1, maxx):
+                    for x in range(minx + 1, maxx):
                         renderer.fillText(scrollbar[5], x, y)
-                    for x in range(minx+3, minx+40):
+                    for x in range(minx + 3, minx + 40):
                         renderer.fillText(scrollbar[6], x, y)
 
                     renderer.fillText(scrollbar[7], maxx, y)
-
-        # super().paint(renderer)
+        super().paint(renderer)
 
 
 class Text(Paintable):
@@ -741,14 +743,15 @@ class Text(Paintable):
 
             renderer.fillText(
                 str(text),
-                self.layout.x, self.layout.y,
+                self.layout.x,
+                self.layout.y,
                 bold=fontWeight == "bold",
                 underline=fontDecoration == "underline",
                 italic=fontStyle == "italic",
             )
 
     def calculateLayoutSizes(self, min_width, min_height, max_width, max_height):
-        text = self.props.get("text").split('\n')
+        text = self.props.get("text").split("\n")
         height = len(text)
         width = max(len(x) for x in text)
         if width < min_width:

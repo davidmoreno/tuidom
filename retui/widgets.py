@@ -14,9 +14,10 @@ class header(Paintable):
     """
     Just uses the widget name for classes. Children are the children.
 
-    This is a common pattern, instead of setting classes for 
+    This is a common pattern, instead of setting classes for
     custom elements, just use the element name
     """
+
     pass
 
 
@@ -44,7 +45,7 @@ class input(Paintable):
         return 1
 
     def getValue(self) -> str:
-        if 'value' in self.props:
+        if "value" in self.props:
             return self.props["value"]
         return self.state["value"]
 
@@ -55,36 +56,36 @@ class input(Paintable):
         match letter:
             case "LEFT":
                 pos = self.state["position"]
-                pos = max(0, pos-1)
+                pos = max(0, pos - 1)
             case "RIGHT":
-                pos = min(len(value), pos+1)
+                pos = min(len(value), pos + 1)
             case "UP":
                 cursor = (self.cursor[0], max(0, self.cursor[1] - 1))
                 pos = self.cursorToPosition(cursor, value)
             case "DOWN":
                 cursor = (
                     self.cursor[0],
-                    min(self.cursor[1] + 1, len(value.split('\n'))-1)
+                    min(self.cursor[1] + 1, len(value.split("\n")) - 1),
                 )
                 pos = self.cursorToPosition(cursor, value)
             case "CONTROL-LEFT":
-                pos = self.state["position"]-1
+                pos = self.state["position"] - 1
                 # first skip spaces, then a word
-                while pos > 0 and value[pos] == ' ':
+                while pos > 0 and value[pos] == " ":
                     pos -= 1
-                while pos > 0 and value[pos] != ' ':
+                while pos > 0 and value[pos] != " ":
                     pos -= 1
-                if value[pos] == ' ':
+                if value[pos] == " ":
                     pos += 1
             case "CONTROL-RIGHT":
-                pos = self.state["position"]+1
+                pos = self.state["position"] + 1
                 mpos = len(value)
                 pos = min(mpos, pos)
                 # skip spaces, then word
-                while pos < mpos and value[pos] == ' ':
-                    print(2, pos, value[pos], value[pos] == ' ')
+                while pos < mpos and value[pos] == " ":
+                    print(2, pos, value[pos], value[pos] == " ")
                     pos += 1
-                while pos < mpos and value[pos] != ' ':
+                while pos < mpos and value[pos] != " ":
                     print(3, pos)
                     pos += 1
                 pos = min(mpos, pos)
@@ -92,7 +93,7 @@ class input(Paintable):
                 pos = self.cursorToPosition((0, self.cursor[1]), value)
             case "END":
                 vp = value[pos:]
-                ex = vp.find('\n')
+                ex = vp.find("\n")
                 if ex < 0:
                     pos += len(vp)
                 else:
@@ -100,7 +101,7 @@ class input(Paintable):
 
             case "DEL":
                 pos = self.state["position"]
-                pre = value[:pos-1]
+                pre = value[: pos - 1]
                 post = value[pos:]
                 value = f"{pre}{post}"
                 pos -= 1
@@ -109,13 +110,13 @@ class input(Paintable):
                 value = self.getValue()
                 pos = self.state["position"]
                 pre = value[:pos]
-                post = value[pos+1:]
+                post = value[pos + 1 :]
                 value = f"{pre}{post}"
             case "ENTER":
                 pos = self.state["position"]
                 pre = value[:pos]
                 post = value[pos:]
-                rows = sum(1 for x in value if x == '\n') + 1
+                rows = sum(1 for x in value if x == "\n") + 1
                 if rows < self.maxRows():
                     value = f"{pre}\n{post}"
                     pos += 1
@@ -143,17 +144,17 @@ class input(Paintable):
         """
         Given a cursor and a text, return the real position
         """
-        lines = text.split('\n')
+        lines = text.split("\n")
         pos = cursor[0]
-        pos += sum(len(x)+1 for x in lines[:cursor[1]])
+        pos += sum(len(x) + 1 for x in lines[: cursor[1]])
         return pos
 
     def getCursor(self, value: str):
         """
-        Gets the cursor position for the given string. 
+        Gets the cursor position for the given string.
         Normally send a partial string split at pos
         """
-        lines = value.split('\n')
+        lines = value.split("\n")
         posy = len(lines) - 1
         posx = len(lines[-1])
 
@@ -170,15 +171,12 @@ class input(Paintable):
         return (posx, posy)
 
     def calculateLayoutSizes(self, min_width, min_height, max_width, max_height):
-        rows = self.props.get("rows", len(self.getValue().split('\n')))
+        rows = self.props.get("rows", len(self.getValue().split("\n")))
         maxRows = self.maxRows()
         rows = min(rows, maxRows)
 
         return super().calculateLayoutSizes(
-            min_width,
-            max(min_height, rows),
-            max_width,
-            min(max_height, maxRows)
+            min_width, max(min_height, rows), max_width, min(max_height, maxRows)
         )
 
     def render(self):
@@ -191,9 +189,7 @@ class textarea(input):
 
 
 class select(Paintable):
-    state = {
-        "open": False
-    }
+    state = {"open": False}
 
     def handleOpenClose(self, ev):
         self.setState({"open": not self.state["open"]})
@@ -227,15 +223,15 @@ class select(Paintable):
                     className="relative",
                     on_click=self.handleOpenClose,
                 ),
-                div(
-                    className="absolute z-100",
-                    style={"zIndex": 1000}
-                )[self.props.get("children", [])]
+                div(className="absolute z-100", style={"zIndex": 1})[
+                    self.props.get("children", [])
+                ],
             ]
         else:
             return Text(
                 style=self,
-                on_click=self.handleOpenClose, text=f" {self.props.get('label')} "
+                on_click=self.handleOpenClose,
+                text=f" {self.props.get('label')} ",
             )
 
 

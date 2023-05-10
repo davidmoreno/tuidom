@@ -16,6 +16,7 @@ class ScreenChar:
     bg: str = ""
     fg: str = ""
     fontModifier: set[FontModifier] = field(default_factory=set)
+    zIndex: int = 0
 
     def update(self, **kwargs):
         return ScreenChar(
@@ -23,6 +24,7 @@ class ScreenChar:
             fg=kwargs.get("fg", self.fg),
             bg=kwargs.get("bg", self.bg),
             fontModifier=kwargs.get("fontModifier", self.fontModifier),
+            zIndex=kwargs.get("zIndex", self.zIndex),
         )
 
 
@@ -35,6 +37,7 @@ class BufferedRenderer(Renderer):
     max_y: int
     min_x: int
     min_y: int
+    zIndex: int = 0
 
     def __init__(self, renderer: Renderer):
         self.renderer = renderer
@@ -45,17 +48,11 @@ class BufferedRenderer(Renderer):
         self.min_x = 0
         self.min_y = 0
 
-        self.screen = [
-            ScreenChar()
-            for _ in range(0, self.width*self.height)
-        ]
-        self.screen_back = [
-            ScreenChar()
-            for _ in range(0, self.width*self.height)
-        ]
+        self.screen = [ScreenChar() for _ in range(0, self.width * self.height)]
+        self.screen_back = [ScreenChar() for _ in range(0, self.width * self.height)]
 
     def pos(self, x, y):
-        return x + (y*self.width)
+        return x + (y * self.width)
 
     def clip(self, x, y):
         if x < self.min_x:
@@ -69,6 +66,9 @@ class BufferedRenderer(Renderer):
 
         return x, y
 
+    def addZIndex(self, z_index):
+        self.zIndex += z_index
+
     def drawChar(self, x: int, y: int, char: ScreenChar):
         if x < self.min_x:
             return False
@@ -79,7 +79,11 @@ class BufferedRenderer(Renderer):
         elif y >= self.max_y:
             return False
 
-        self.screen[self.pos(x, y)] = char
+        pos = self.pos(x, y)
+        if self.screen[pos].zIndex > self.zIndex:
+            return
+
+        self.screen[pos] = char.update(zIndex=self.zIndex)
 
     def setCursor(self, x, y):
         self.cursor = (x, y)
@@ -89,6 +93,7 @@ class BufferedRenderer(Renderer):
             char=" ",
             bg=self.background,
             fg=self.foreground,
+            zIndex=self.zIndex,
         )
         mx = x + width
         my = y + height
@@ -98,23 +103,29 @@ class BufferedRenderer(Renderer):
             return
 
         x, y = self.clip(x, y)
-        mx, my = self.clip(x+width, y+height)
+        mx, my = self.clip(x + width, y + height)
 
+        z_index = self.zIndex
         for h in range(y, my):
             for p in range(self.pos(x, h), self.pos(mx, h)):
-                self.screen[p] = cur
+                if self.screen[p].zIndex <= z_index:
+                    self.screen[p] = cur
 
     def fillText(self, text, x, y, bold=False, italic=False, underline=False):
         for lineno, line in enumerate(text.split("\n")):
-            py = y+lineno
+            py = y + lineno
             if py < 0 or py > self.height:
                 continue
             for n, c in enumerate(line):
-                self.drawChar(x+n, py, ScreenChar(
-                    c,
-                    bg=self.background,
-                    fg=self.foreground,
-                ))
+                self.drawChar(
+                    x + n,
+                    py,
+                    ScreenChar(
+                        c,
+                        bg=self.background,
+                        fg=self.foreground,
+                    ),
+                )
 
     def fillStroke(self, x, y, width, height):
         """
@@ -134,26 +145,25 @@ class BufferedRenderer(Renderer):
 
         sc = ScreenChar(bg=self.background, fg=self.foreground)
         self.drawChar(x, y, sc.update(char=table_chars[1]))
-        for p in range(x+1, x+width-1):
+        for p in range(x + 1, x + width - 1):
             self.drawChar(p, y, sc.update(char=table_chars[2]))
-        self.drawChar(x+width-1, y, sc.update(char=table_chars[3]))
+        self.drawChar(x + width - 1, y, sc.update(char=table_chars[3]))
 
-        for ny in range(y+1, y+height):
+        for ny in range(y + 1, y + height):
             self.drawChar(x, ny, sc.update(char=table_chars[7]))
-            self.drawChar(x+width-1, ny, sc.update(char=table_chars[0]))
+            self.drawChar(x + width - 1, ny, sc.update(char=table_chars[0]))
 
-        ny = y+height-1
+        ny = y + height - 1
         self.drawChar(x, ny, sc.update(char=table_chars[4]))
-        for p in range(x+1, x+width-1):
+        for p in range(x + 1, x + width - 1):
             self.drawChar(p, ny, sc.update(char=table_chars[5]))
-        self.drawChar(x+width-1, ny, sc.update(char=table_chars[6]))
+        self.drawChar(x + width - 1, ny, sc.update(char=table_chars[6]))
 
     def readEvents(self) -> Generator[Event, None, None]:
         for ev in self.renderer.readEvents():
             if isinstance(ev, EventKeyPress) and ev.keycode == "CONTROL-L":
                 self.screen_back = [
-                    ScreenChar()
-                    for _ in range(0, self.width*self.height)
+                    ScreenChar() for _ in range(0, self.width * self.height)
                 ]
                 self.flush()
         yield ev
@@ -176,8 +186,14 @@ class BufferedRenderer(Renderer):
                 bold = ScreenChar.FontModifier.BOLD in prev_char.fontModifier
                 underline = ScreenChar.FontModifier.UNDERSCORE in prev_char.fontModifier
                 italic = ScreenChar.FontModifier.ITALIC in prev_char.fontModifier
-                self.renderer.fillText(line, x-len(line), y, bold=bold,
-                                       underline=underline, italic=italic)
+                self.renderer.fillText(
+                    line,
+                    x - len(line),
+                    y,
+                    bold=bold,
+                    underline=underline,
+                    italic=italic,
+                )
                 line = ""
 
         for y in range(0, self.height):
@@ -198,7 +214,8 @@ class BufferedRenderer(Renderer):
                         dumpline()
                         prev_char = cur
                     line += cur.char
-                    pos = (x+1, y)
+                    # line += str(cur.zIndex)
+                    pos = (x + 1, y)
                 p += 1
         dumpline()
 
@@ -206,6 +223,8 @@ class BufferedRenderer(Renderer):
         self.renderer.flush()
         self.screen_back = screen
         self.screen = screen_back
+        for char in self.screen:
+            char.zIndex = 0
 
     def close(self):
         return self.renderer.close()
