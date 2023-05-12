@@ -53,6 +53,9 @@ class Selector:
             self.priority += 1
             self.pseudo = (self.pseudo or []) + mdict["pseudo2"].split(":")[1:]
 
+        if self.pseudo is None:
+            self.pseudo = []
+
     def match(self, element: "tui.Component"):
         if self.element and element.name != self.element:
             return False
@@ -66,7 +69,13 @@ class Selector:
                 if cls not in elcls:
                     return False
 
-        if self.pseudo:
+        if "focus" in self.pseudo:
+            focused = element.document.currentFocusedElement
+            while focused:
+                if focused == element:
+                    return self.priority
+                focused = focused.parent
+
             return False
 
         return self.priority
@@ -86,22 +95,26 @@ class StyleSheet:
             selector = Selector(selector)
             if selector.priority < 0:
                 continue
-            style = self.normalizeStyle(style)
+            style = StyleSheet.normalizeStyle(style)
             self.rules.append((selector, style))
 
-    def normalizeStyle(self, style):
+    @staticmethod
+    def normalizeStyle(style):
         if "padding" in style:
             padding = style["padding"]
-            style["paddingTop"] = style.get("paddingTop", padding)
-            style["paddingRight"] = style.get("paddingRight", padding)
-            style["paddingBottom"] = style.get("paddingBottom", padding)
-            style["paddingLeft"] = style.get("paddingLeft", padding)
+            top, right, bottom, left = split_421_item(padding)
+            style["paddingTop"] = style.get("paddingTop") or top
+            style["paddingRight"] = style.get("paddingRight") or right
+            style["paddingBottom"] = style.get("paddingBottom") or bottom
+            style["paddingLeft"] = style.get("paddingLeft") or left
         if "border" in style:
             border = style["border"]
-            style["borderTop"] = style.get("borderTop", border)
-            style["borderRight"] = style.get("borderRight", border)
-            style["borderBottom"] = style.get("borderBottom", border)
-            style["borderLeft"] = style.get("borderLeft", border)
+            top, right, bottom, left = split_421_item(border)
+            style["borderTop"] = style.get("borderTop") or top
+            style["borderRight"] = style.get("borderRight") or right
+            style["borderBottom"] = style.get("borderBottom") or bottom
+            style["borderLeft"] = style.get("borderLeft") or left
+
         return style
 
     def getStyle(self, component: "retui.Component", key: str):
@@ -114,3 +127,18 @@ class StyleSheet:
                 value = style.get(key) or value
                 priority = pri
         return value
+
+
+def split_421_item(item):
+    items = [int(x) for x in str(item).split()]
+    if len(items) == 1:
+        item = int(items[0])
+        return item, item, item, item
+    if len(items) == 2:
+        return items[0], items[1], items[0], items[1]
+    if len(items) == 3:
+        return items[0], items[1], items[2], items[1]
+    if len(items) == 4:
+        return items[0], items[1], items[2], items[3]
+
+    return items

@@ -65,10 +65,8 @@ class ComponentTestCase(TestCase):
         self.assertEqual(app.children[0].children[0].props["text"], "O")
         self.assertEqual(app.children[0].children[1].props["text"], "FF")
         self.assertEqual(app.children[0].props["className"], "off")
-        self.assertEqual(
-            app.children[0].children[0].props["className"], "bold")
-        self.assertEqual(
-            app.children[0].children[1].props.get("className"), None)
+        self.assertEqual(app.children[0].children[0].props["className"], "bold")
+        self.assertEqual(app.children[0].children[1].props.get("className"), None)
 
         app.setState({"is_on": True})
         app.materialize()
@@ -83,10 +81,8 @@ class ComponentTestCase(TestCase):
         self.assertEqual(app.children[0].children[0].props["text"], "O")
         self.assertEqual(app.children[0].children[1].props["text"], "FF")
         self.assertEqual(app.children[0].props["className"], "off")
-        self.assertEqual(
-            app.children[0].children[0].props["className"], "bold")
-        self.assertEqual(
-            app.children[0].children[1].props.get("className"), None)
+        self.assertEqual(app.children[0].children[0].props["className"], "bold")
+        self.assertEqual(app.children[0].children[1].props.get("className"), None)
 
     def test_layout(self):
         class App(Document):
@@ -95,7 +91,7 @@ class ComponentTestCase(TestCase):
                     span(id="b1")[
                         Text("H1", id="h1"),
                         Text("H2", id="h2", className="flex-1"),
-                        Text("H3", id="h3")
+                        Text("H3", id="h3"),
                     ],
                     Text("MID 1/3", id="b2", className="flex-1"),
                     Text("MID 2/3", id="b3", className="flex-2"),
@@ -110,9 +106,10 @@ class ComponentTestCase(TestCase):
 
         def printLayout(item: Component, indent=0):
             print(
-                f"{' '*indent}{item.name}#{item.props.get('id')} {item.getStyle('flex-direction')} {item.layout}")
+                f"{' '*indent}{item.name}#{item.props.get('id')} {item.getStyle('flex-direction')} {item.layout}"
+            )
             for child in item.children:
-                printLayout(child, indent+2)
+                printLayout(child, indent + 2)
 
         printLayout(app)
 
@@ -147,7 +144,7 @@ class ComponentTestCase(TestCase):
                     span(id="b1")[
                         Text("H1", id="h1"),
                         Text("H2", id="h2", className="flex-1"),
-                        Text("H3", id="h3")
+                        Text("H3", id="h3"),
                     ],
                     Text("MID 1/3", id="b2", className="flex-1"),
                     div(id="b3", className="flex-2")[
@@ -157,14 +154,16 @@ class ComponentTestCase(TestCase):
                     Text("BOTTOM", id="b4"),
                 ]
 
-        app = App(css={
-            "input": {
-                "background": "white",
-            },
-            "input:focus": {
-                "background": "blue",
-            },
-        })
+        app = App(
+            stylesheet={
+                "input": {
+                    "background": "white",
+                },
+                "input:focus": {
+                    "background": "blue",
+                },
+            }
+        )
         app.materialize()
         app.prettyPrint()
 
@@ -248,8 +247,15 @@ class ComponentTestCase(TestCase):
         self.assertEqual(item.getStyle("paddingBottom"), 1)
         self.assertEqual(item.getStyle("paddingLeft"), 1)
 
-        item = div(style={"padding": 1, "paddingTop": 2,
-                   "paddingRight": 3, "paddingBottom": 4, "paddingLeft": 5})
+        item = div(
+            style={
+                "padding": 1,
+                "paddingTop": 2,
+                "paddingRight": 3,
+                "paddingBottom": 4,
+                "paddingLeft": 5,
+            }
+        )
         item.document = Document()
         self.assertEqual(item.getStyle("paddingTop"), 2)
         self.assertEqual(item.getStyle("paddingRight"), 3)

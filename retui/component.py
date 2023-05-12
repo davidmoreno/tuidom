@@ -69,6 +69,8 @@ class Component:
     def __init__(self, *, children=None, **props):
         if not self.name:
             self.name = self.__class__.__name__
+        if "style" in props:
+            props = {**props, "style": css.StyleSheet.normalizeStyle(props["style"])}
         self.props = props
         Component.serialid += 1
         self.serialid = Component.serialid
@@ -249,6 +251,9 @@ class Component:
             yield from child.preorderTraversal()
 
     def getStyle(self, csskey: StyleProperty, default=None):
+        styles = self.props.get("style", {})
+        if csskey in styles:
+            return styles[csskey]
         value = self.document.stylesheet.getStyle(self, csskey)
         if value:
             return value
