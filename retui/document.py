@@ -1,6 +1,6 @@
 import logging
 
-from retui import defaults
+from retui import css, defaults
 from retui.renderer import Renderer
 
 from .events import (
@@ -24,23 +24,26 @@ class Document(HandleEventTrait, Component):
 
     currentFocusedElement = None
     name = "body"
-    css = defaults.DEFAULT_CSS
+    stylesheet: css.StyleSheet
     stopLoop: None | EventExit = None
     cache = {}
 
-    def __init__(self, children=None, *, css=None, **props):
+    def __init__(self, children=None, *, stylesheet=None, **props):
+        self.stylesheet = css.StyleSheet()
+        # self.stylesheet.addDict(defaults.DEFAULT_CSS)
         if children:
             props = {
                 **props,
                 "children": children,
             }
-        if css:
-            self.css = {**defaults.DEFAULT_CSS, **css}
+        if stylesheet:
+            self.stylesheet.addDict(stylesheet)
         super().__init__(**props)
         self.props = {
             "on_keypress": self.on_keypress,
         }
         self.document = self
+        self.materialize()
 
     def is_focusable(self, item: Component):
         if not isinstance(item, HandleEventTrait):

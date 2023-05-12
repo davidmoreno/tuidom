@@ -5,7 +5,15 @@ import termios
 import tty
 from typing import Generator
 
-from .events import Event, EventMouseClick, EventExit, EventKeyPress, EventMouseClick, EventMouseDown, EventMouseUp
+from .events import (
+    Event,
+    EventMouseClick,
+    EventExit,
+    EventKeyPress,
+    EventMouseClick,
+    EventMouseDown,
+    EventMouseUp,
+)
 from .renderer import Renderer
 from .defaults import COLORS
 from retui import defaults
@@ -15,6 +23,7 @@ class XtermRenderer(Renderer):
     """
     Implementation for Xterm
     """
+
     foreground = "white"
     background = "blue"
     lineWidth = 1  # depending on width the stroke will use diferent unicode chars
@@ -41,7 +50,7 @@ class XtermRenderer(Renderer):
             self.oldtermios = termios.tcgetattr(fd)
             tty.setcbreak(fd)
             new = termios.tcgetattr(fd)
-            new[3] = new[3] & ~(termios.ECHO | termios.ICANON)        # lflags
+            new[3] = new[3] & ~(termios.ECHO | termios.ICANON)  # lflags
             termios.tcsetattr(fd, termios.TCSADRAIN, new)
             print("\033[?1000h")
         else:
@@ -86,28 +95,19 @@ class XtermRenderer(Renderer):
                 buttons = 2
             if buttons == 35:
                 buttons = 0
-            x = int(key[4])-33
-            y = int(key[5])-33
+            x = int(key[4]) - 33
+            y = int(key[5]) - 33
             if buttons:
-                yield EventMouseDown(
-                    buttons=buttons,
-                    position=(x, y)
-                )
+                yield EventMouseDown(buttons=buttons, position=(x, y))
             else:
-                yield EventMouseUp(
-                    buttons=buttons,
-                    position=(x, y)
-                )
-                yield EventMouseClick(
-                    buttons=self.prev_mouse_buttons,
-                    position=(x, y)
-                )
+                yield EventMouseUp(buttons=buttons, position=(x, y))
+                yield EventMouseClick(buttons=self.prev_mouse_buttons, position=(x, y))
             self.prev_mouse_buttons = buttons
             return
 
         elif len(key) == 1:
             if 0 < ord(key) < 27:
-                ckey = chr(ord(key) + ord('A') - 1)
+                ckey = chr(ord(key) + ord("A") - 1)
                 if ckey == "I":
                     key = "TAB"
                 elif ckey == "J":
@@ -132,11 +132,13 @@ class XtermRenderer(Renderer):
         if color in COLORS:
             color = COLORS[color]
             if isinstance(color, tuple):
-                return ';'.join(map(str, color))
+                return ";".join(map(str, color))
             if color.startswith("#"):
-                return f"{int(color[1:3], 16)};{int(color[3:5], 16)};{int(color[5:7], 16)}"
+                return (
+                    f"{int(color[1:3], 16)};{int(color[3:5], 16)};{int(color[5:7], 16)}"
+                )
 
-        return ';'.join(map(str, COLORS["black"]))
+        return ";".join(map(str, COLORS["black"]))
 
     def __set_color(self):
         return f"\033[48;2;{self.rgbcolor(self.background)}m\033[38;2;{self.rgbcolor(self.foreground)}m"
@@ -158,14 +160,14 @@ class XtermRenderer(Renderer):
             )
 
         for lineno, line in enumerate(text.split("\n")):
-            py = y+lineno
+            py = y + lineno
             if py < 0 or py > self.height:
                 continue
             self.print(
                 self.__set_color(),
                 self.__set_cursor(x, py),
                 # f"\033[{py};{x}H",  # position
-                line
+                line,
             )
 
         if bold or italic or underline:
@@ -179,10 +181,10 @@ class XtermRenderer(Renderer):
             [
                 [
                     self.__set_cursor(x, top),
-                    " "*width,  # write bg lines
+                    " " * width,  # write bg lines
                 ]
                 for top in range(y, y + height)
-            ]
+            ],
         )
 
     def setCursor(self, x, y):
@@ -202,7 +204,7 @@ class XtermRenderer(Renderer):
         self.lineWidth = width
 
     def __set_cursor(self, x, y):
-        return f"\033[{y+1};{x+1}H",  # position
+        return (f"\033[{y+1};{x+1}H",)  # position
 
     def fillStroke(self, x, y, width, height):
         """
@@ -221,14 +223,18 @@ class XtermRenderer(Renderer):
             table_chars = "▐▛▀▜▙▄▟▌"
 
         self.print(self.__set_cursor(x, y))
-        self.print(table_chars[1], table_chars[2]*(width-2), table_chars[3])
-        for ny in range(y+1, y+height):
+        self.print(table_chars[1], table_chars[2] * (width - 2), table_chars[3])
+        for ny in range(y + 1, y + height):
             self.print(self.__set_cursor(x, ny))
             self.print(table_chars[7])
-            self.print(self.__set_cursor(x+width-1, ny))
+            self.print(self.__set_cursor(x + width - 1, ny))
             self.print(table_chars[0])
-        self.print(self.__set_cursor(x, y+height-1))
-        self.print(table_chars[4], table_chars[5]*(width-2), table_chars[6],)
+        self.print(self.__set_cursor(x, y + height - 1))
+        self.print(
+            table_chars[4],
+            table_chars[5] * (width - 2),
+            table_chars[6],
+        )
 
     def breakpoint(self, callback=None, document=None):
         self.captureKeyboard(False)
@@ -245,4 +251,4 @@ class XtermRenderer(Renderer):
 def strlist_to_str(strl):
     if isinstance(strl, str):
         return strl
-    return ''.join(strlist_to_str(x) for x in strl)
+    return "".join(strlist_to_str(x) for x in strl)
