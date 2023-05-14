@@ -183,14 +183,14 @@ class ComponentTestCase(TestCase):
         # check get proper style by priority
 
         # not :focus
-        self.assertEqual(inpt.getStyle("background"), "white")
+        self.assertEqual(inpt.getStyle("background"), "text-secondary")
 
         # :focus
         app.currentFocusedElement = inpt
         inpt2 = app.queryElement("input:focus")
         self.assertEqual(inpt, inpt2)
 
-        self.assertEqual(inpt.getStyle("background"), "blue")
+        self.assertEqual(inpt.getStyle("background"), "bg-secondary")
 
         app.currentFocusedElement = inpt
         order_of_pri = [
