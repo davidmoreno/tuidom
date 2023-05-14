@@ -58,9 +58,11 @@ class Renderer:
         pass
 
     def setBackground(self, color):
+        assert color is not None
         self.background = color
 
     def setForeground(self, color):
+        assert color is not None
         self.foreground = color
 
     def setLineWidth(self, width):

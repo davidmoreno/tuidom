@@ -64,7 +64,10 @@ class Selector:
             return False
 
         if self.classes:
-            elcls = element.props.get("className", "").split()
+            elcls = element.props.get("className")
+            if not elcls:
+                return False
+            elcls = elcls.split()
             for cls in self.classes:
                 if cls not in elcls:
                     return False
@@ -122,7 +125,7 @@ class StyleSheet:
         value = None
         for selector, style in self.rules:
             pri = selector.match(component)
-            print(selector, pri, key, value)
+            # print(selector, pri, key, value)
             if pri and pri > priority:
                 value = style.get(key) or value
                 priority = pri

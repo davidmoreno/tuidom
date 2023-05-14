@@ -30,7 +30,7 @@ class Document(HandleEventTrait, Component):
 
     def __init__(self, children=None, *, stylesheet=None, **props):
         self.stylesheet = css.StyleSheet()
-        # self.stylesheet.addDict(defaults.DEFAULT_CSS)
+        self.stylesheet.addDict(defaults.DEFAULT_CSS)
         if children:
             props = {
                 **props,
