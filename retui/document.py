@@ -101,12 +101,10 @@ class Document(HandleEventTrait, Component):
     def on_event(self, ev: Event):
         def handle_event(ev: Event):
             if isinstance(ev, EventMouseClick):
-                el = ev.target
-                while el:
+                for el in ev.target.parentTraversal():
                     if self.is_focusable(el):
                         self.setFocus(el)
                         break
-                    el = el.parent
 
             name = f"on_{ev.name}"
             el = ev.target
@@ -123,17 +121,8 @@ class Document(HandleEventTrait, Component):
                 self.setOpenElement(None)
 
         if isinstance(ev, EventMouseClick):
-            x, y = ev.position
-            z = -1000
-            for el in self.preorderTraversal():
-                elz = el.getStyle("zIndex") or 0
-                # print(el, z, elz)
-                if elz >= z:
-                    inside = el.layout.inside(x, y)
-                    # print(inside, el.layout, x, y)
-                    if inside:
-                        ev.target = el
-                        z = elz
+            el = self.findElementAt(*ev.position)
+            ev.target = el
 
         if isinstance(ev, EventExit):
             self.stopLoop = ev
@@ -151,14 +140,18 @@ class Document(HandleEventTrait, Component):
 
         # not handled
 
-    def paint(self, renderer: Renderer):
-        self.calculateLayoutSizes(0, 0, renderer.width, renderer.height)
+    def findElementAt(self, x: int, y: int):
+        _z, el = super().findElementAt(x, y)
+        return el
+
+    def calculateLayout(self, width, height):
+        self.calculateLayoutSizes(0, 0, width, height)
         self.layout.y = 0
         self.layout.x = 0
         self.calculateLayoutPosition()
-        # for node in self.preorderTraversal():
-        #     print(node, node.layout)
-        # return
+
+    def paint(self, renderer: Renderer):
+        self.calculateLayout(renderer.width, renderer.height)
 
         renderer.setBackground(self.getStyle("background"))
         renderer.setForeground(self.getStyle("color"))

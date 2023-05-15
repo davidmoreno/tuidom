@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass
 
 
@@ -85,6 +84,6 @@ class EventExit(Event):
 
 class EventChange(Event):
     def __init__(self, value, target=None):
-        super().__init__("selected")
+        super().__init__("change")
         self.value = value
-        self.originalTarget = target
+        self.target = target

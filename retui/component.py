@@ -231,6 +231,27 @@ class Component:
         for child in self.children:
             yield from child.preorderTraversal()
 
+    def parentTraversal(self):
+        el = self
+        while el:
+            yield el
+            el = el.parent
+
+    def findElementAt(self, x: int, y: int, z: int = 0) -> tuple[int, "Self"]:
+        """
+        Finds which element is at that position.
+        """
+        zIndex = (self.getStyle("zIndex") or 0) + z
+        ret = (-1, None)
+        if self.layout.inside(x, y):
+            ret = (zIndex, self)
+
+        for child in self.children:
+            rc = child.findElementAt(x, y, zIndex)
+            if rc[0] >= ret[0]:
+                ret = rc
+        return ret
+
     def getStyle(self, csskey: css.StyleProperty, default=None):
         style = self.props.get("style", {})
         # allow refer style to another component
@@ -469,13 +490,22 @@ class Component:
             )
             or ""
         )
+        pseudo = []
+        if self.document.currentFocusedElement:
+            for el in self.document.currentFocusedElement.parentTraversal():
+                if self == el:
+                    pseudo.append(":focus")
+                    break
+        if self == self.document.currentOpenElement:
+            pseudo.append(":open")
+        pseudo = " ".join(pseudo)
         if self.children:
-            print(f'{" " * indent}<{self.name} {props} {state}>')
+            print(f'{" " * indent}<{self.name} {props} {state} {pseudo}>')
             for child in self.children:
                 child.prettyPrint(indent + 2)
             print(f'{" " * indent}</{self.name}>')
         else:
-            print(f'{" " * indent}<{self.name} {props} {state}/>')
+            print(f'{" " * indent}<{self.name} {props} {state} {pseudo}/>')
 
 
 class Paintable(HandleEventTrait, Component):
@@ -578,8 +608,8 @@ class Text(Paintable):
             )
 
     def calculateLayoutSizes(self, min_width, min_height, max_width, max_height):
-        text = self.props.get("text").split("\n")
-        height = len(text)
+        text = self.props.get("text", "").split("\n")
+        height = min(1, len(text))
         width = max(len(x) for x in text)
         if width < min_width:
             width = min_width

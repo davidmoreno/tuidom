@@ -83,10 +83,8 @@ class input(Paintable):
                 pos = min(mpos, pos)
                 # skip spaces, then word
                 while pos < mpos and value[pos] == " ":
-                    print(2, pos, value[pos], value[pos] == " ")
                     pos += 1
                 while pos < mpos and value[pos] != " ":
-                    print(3, pos)
                     pos += 1
                 pos = min(mpos, pos)
             case "START":
@@ -201,9 +199,9 @@ class select(Paintable):
 
     def handleChange(self, ev):
         on_change = self.props.get("on_change")
-        ev.target = self
-        if on_change:
-            on_change(ev)
+        if not on_change:
+            return
+        on_change(ev)
 
     def handleKeyPress(self, ev: EventKeyPress):
         if not self.children or not self.state["open"]:
@@ -220,6 +218,7 @@ class select(Paintable):
             return div(
                 on_keypress=self.handleKeyPress,
                 # on_blur=lambda ev: self.setState({"open": False})
+                # on_change=self.handleChange,
             )[
                 Text(
                     text=f" {self.props.get('label')} ",
@@ -246,10 +245,11 @@ class option(Paintable):
             parent = parent.parent
         if not parent:
             return
-        parent.handleChange(EventChange(self.props.get("value"), target=self))
+        ev2 = EventChange(self.props.get("value"), target=self)
+        parent.handleChange(ev2)
 
     def __init__(self, **kwargs):
-        super().__init__(on_click=kwargs.get("on_click", self.handleOnClick))
+        super().__init__(on_click=kwargs.get("on_click", self.handleOnClick), **kwargs)
 
 
 class dialog(Paintable):

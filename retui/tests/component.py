@@ -3,6 +3,7 @@ from unittest import TestCase
 from retui.component import Component, Text
 from retui.css import Selector
 from retui.document import Document
+from retui.tests.utils import printLayout
 from retui.widgets import div, span, input
 
 logger = logging.getLogger(__name__)
@@ -104,13 +105,6 @@ class ComponentTestCase(TestCase):
         app.prettyPrint()
         app.calculateLayoutSizes(80, 32, 80, 32)
         app.calculateLayoutPosition()
-
-        def printLayout(item: Component, indent=0):
-            print(
-                f"{' '*indent}{item.name}#{item.props.get('id')} {item.getStyle('flex-direction')} {item.layout}"
-            )
-            for child in item.children:
-                printLayout(child, indent + 2)
 
         printLayout(app)
 
