@@ -133,7 +133,7 @@ class Document(HandleEventTrait, Component):
                     # print(inside, el.layout, x, y)
                     if inside:
                         ev.target = el
-                        elz = z
+                        z = elz
 
         if isinstance(ev, EventExit):
             self.stopLoop = ev
