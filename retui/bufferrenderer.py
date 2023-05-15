@@ -166,7 +166,7 @@ class BufferedRenderer(Renderer):
                     ScreenChar() for _ in range(0, self.width * self.height)
                 ]
                 self.flush()
-        yield ev
+            yield ev
 
     def flush(self):
         p = 0
