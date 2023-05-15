@@ -1,5 +1,5 @@
 from retui.component import Component, Paintable, Text
-from retui.events import EventKeyPress, EventChange
+from retui.events import EventKeyPress, EventChange, EventMouseClick
 
 
 class div(Paintable):
@@ -189,13 +189,17 @@ class textarea(input):
 
 
 class select(Paintable):
-    state = {"open": False}
+    def isOpen(self):
+        return self == self.document.currentOpenElement
 
-    def handleOpenClose(self, ev):
-        self.setState({"open": not self.state["open"]})
+    def handleOpenClose(self, ev: EventMouseClick):
+        if self.isOpen():
+            self.document.setOpenElement(None)
+        else:
+            self.document.setOpenElement(self)
+        ev.stopPropagation = True
 
     def handleChange(self, ev):
-        self.setState({"open": False})
         on_change = self.props.get("on_change")
         ev.target = self
         if on_change:
@@ -212,7 +216,7 @@ class select(Paintable):
                 self.document.setFocus(self.children[-1])
 
     def render(self):
-        if self.state["open"]:
+        if self.isOpen():
             return div(
                 on_keypress=self.handleKeyPress,
                 # on_blur=lambda ev: self.setState({"open": False})

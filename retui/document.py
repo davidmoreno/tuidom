@@ -23,6 +23,8 @@ class Document(HandleEventTrait, Component):
     """
 
     currentFocusedElement = None
+    # current open element normally a select. Click outside and it is closed. And only one at a time.
+    currentOpenElement = None
     name = "body"
     stylesheet: css.StyleSheet
     stopLoop: None | EventExit = None
@@ -85,6 +87,9 @@ class Document(HandleEventTrait, Component):
 
         return el
 
+    def setOpenElement(self, el):
+        self.currentOpenElement = el
+
     def on_keypress(self, event: EventKeyPress):
         if event.keycode == "TAB":
             self.nextFocus()
@@ -114,6 +119,8 @@ class Document(HandleEventTrait, Component):
                     if ev.stopPropagation:
                         return
                 el = el.parent
+            if self.currentOpenElement and isinstance(ev, EventMouseClick):
+                self.setOpenElement(None)
 
         if isinstance(ev, EventMouseClick):
             x, y = ev.position
