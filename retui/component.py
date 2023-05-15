@@ -2,32 +2,12 @@ from dataclasses import dataclass
 import itertools
 import logging
 import math
-import re
-from typing import Literal
 
 from retui import css
 from .events import HandleEventTrait
 from .renderer import Renderer
 
 logger = logging.getLogger(__name__)
-
-CSS_SELECTOR_RE = re.compile(
-    r"^(?P<name>\w+|)(?P<pseudo>(:\w+)*)(?P<id>#\w+|)(?P<class>(\.(\w|[-_])+)*)$"
-)
-
-StyleProperty = Literal[
-    "color",
-    "background",
-    "flex-direction",
-    "flex-grow",
-    "padding",
-    "border",
-    "width",
-    "height",
-]
-
-# this styles are checked against parents if not defined
-INHERITABLE_STYLES: list[StyleProperty] = ["color", "background"]
 
 
 @dataclass
@@ -251,7 +231,7 @@ class Component:
         for child in self.children:
             yield from child.preorderTraversal()
 
-    def getStyle(self, csskey: StyleProperty, default=None):
+    def getStyle(self, csskey: css.StyleProperty, default=None):
         style = self.props.get("style", {})
         # allow refer style to another component
         if isinstance(style, Component):
@@ -261,60 +241,9 @@ class Component:
         value = self.document.stylesheet.getStyle(self, csskey)
         if value:
             return value
-        if csskey in INHERITABLE_STYLES and self.parent:
+        if csskey in css.INHERITABLE_STYLES and self.parent:
             return self.parent.getStyle(csskey, default)
         return default
-
-    def matchCssSelector(self, selector: css.Selector) -> int:
-        """
-        Very simple selectors. Simple classnames, type and ids. Not nested.
-
-        Returns 0 if no match, if not a priority number, the
-        highest more priority
-
-        Priority based on https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity
-        """
-        if not selector or selector == "*":
-            return 1
-
-        match = CSS_SELECTOR_RE.match(selector)
-        pri = 0
-        if not match:
-            logger.warning("Invalid selector")
-            return 0
-        mdict = match.groupdict()
-        if mdict["name"]:
-            if mdict["name"] != self.name:
-                return 0
-            pri += 1
-        if mdict["id"]:
-            if mdict["id"][1:] != self.props.get("id"):
-                return 0
-            pri += 10000
-        if mdict["class"]:
-            class_name = self.props.get("className", "").split(" ")
-            classes = mdict["class"].split(".")[1:]
-            for clss in classes:
-                if clss not in class_name:
-                    return 0
-            pri += 10 * len(classes)
-        if mdict["pseudo"]:
-            pri += 1
-            for pseudo in mdict["pseudo"].split(":")[1:]:
-                if pseudo == "focus":
-                    # current focused element maybe a distant child, must check all parents
-                    item = self.document.currentFocusedElement
-                    is_focused = False
-                    while item:
-                        if item == self:
-                            is_focused = True
-                        item = item.parent
-                    if not is_focused:
-                        return 0
-                else:
-                    logger.warning("Unknown Pseudo Selector: %s", pseudo)
-
-        return pri
 
     def calculateProportion(self, current, rule):
         """

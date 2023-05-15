@@ -1,6 +1,7 @@
 import logging
 from unittest import TestCase
-from retui.component import CSS_SELECTOR_RE, Component, Text
+from retui.component import Component, Text
+from retui.css import Selector
 from retui.document import Document
 from retui.widgets import div, span, input
 
@@ -170,7 +171,7 @@ class ComponentTestCase(TestCase):
         fl1 = app.queryElement("#b2")
         self.assertTrue(fl1)
         self.assertEqual(fl1.props.get("className"), "flex-1")
-        self.assertTrue(fl1.matchCssSelector(".flex-1"))
+        self.assertTrue(Selector(".flex-1").match(fl1))
         fl1 = app.queryElement(".flex-1")
         self.assertTrue(fl1)
         self.assertEqual(fl1.props.get("className"), "flex-1")
@@ -205,7 +206,7 @@ class ComponentTestCase(TestCase):
         ]
         pri = 0
         for sel in order_of_pri:
-            npri = inpt.matchCssSelector(sel)
+            npri = Selector(sel).match(inpt)
             logger.debug("'%s' -> %s", sel, npri)
             self.assertGreaterEqual(npri, pri)
             pri = npri

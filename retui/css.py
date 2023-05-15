@@ -1,10 +1,26 @@
 from dataclasses import dataclass
 import re
 import logging
+from typing import Literal
+
+
+StyleProperty = Literal[
+    "color",
+    "background",
+    "flex-direction",
+    "flex-grow",
+    "padding",
+    "border",
+    "width",
+    "height",
+]
+
+# this styles are checked against parents if not defined
+INHERITABLE_STYLES: list[StyleProperty] = ["color", "background"]
 
 
 CSS_SELECTOR_RE = re.compile(
-    r"^(?P<element>\w+|)(?P<pseudo>(:\w+)*)(?P<id>#\w+|)(?P<class>(\.(\w|[-_])+)*)(?P<pseudo2>(:\w+)*)$"
+    r"^(?P<element>\w+|\*|)(?P<pseudo>(:\w+)*)(?P<id>#\w+|)(?P<class>(\.(\w|[-_])+)*)(?P<pseudo2>(:\w+)*)$"
 )
 
 logger = logging.getLogger(__name__)
@@ -36,7 +52,7 @@ class Selector:
             return
 
         mdict = match.groupdict()
-        if mdict["element"]:
+        if mdict["element"] and mdict["element"] != "*":
             self.element = mdict["element"]
             self.priority += 1
         if mdict["id"]:
