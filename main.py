@@ -157,13 +157,13 @@ class App(Document):
                 ),
                 self.state["openDialog"]
                 and OpenfileDialog(
-                    lambda: self.setState({"openDialog": False}),
-                    lambda: self.setState({"openDialog": False}),
+                    onAccept=lambda: self.setState({"openDialog": False}),
+                    onCancel=lambda: self.setState({"openDialog": False}),
                 ),
                 # div(style={"position": "absolute",
                 #     "top": 10, "left": 10, "background": "blue", "padding": 1, "border": 4, "borderColor": "#3355FF"})["Hola"]
             ],
-            footer()["(C) 2023 | Coralbits SL | ", str(self.state["keypress"])],
+            footer()["🐟 (C) 2023 | Coralbits SL | ", str(self.state["keypress"])],
         ]
 
 

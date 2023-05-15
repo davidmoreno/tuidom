@@ -120,11 +120,13 @@ class Document(HandleEventTrait, Component):
             z = -1000
             for el in self.preorderTraversal():
                 elz = el.getStyle("zIndex") or 0
+                # print(el, z, elz)
                 if elz >= z:
                     inside = el.layout.inside(x, y)
+                    # print(inside, el.layout, x, y)
                     if inside:
                         ev.target = el
-                        z = elz
+                        elz = z
 
         if isinstance(ev, EventExit):
             self.stopLoop = ev

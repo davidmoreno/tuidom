@@ -5,17 +5,15 @@ import termios
 import tty
 from typing import Generator
 
-from .events import (
+from retui.events import (
     Event,
     EventMouseClick,
     EventExit,
     EventKeyPress,
-    EventMouseClick,
     EventMouseDown,
     EventMouseUp,
 )
 from .renderer import Renderer
-from .defaults import COLORS
 from retui import defaults
 
 
@@ -129,8 +127,8 @@ class XtermRenderer(Renderer):
         """
         if color.startswith("#"):
             return f"{int(color[1:3], 16)};{int(color[3:5], 16)};{int(color[5:7], 16)}"
-        if color in COLORS:
-            color = COLORS[color]
+        if color in defaults.COLORS:
+            color = defaults.COLORS[color]
             if isinstance(color, tuple):
                 return ";".join(map(str, color))
             if color.startswith("#"):
@@ -138,7 +136,7 @@ class XtermRenderer(Renderer):
                     f"{int(color[1:3], 16)};{int(color[3:5], 16)};{int(color[5:7], 16)}"
                 )
 
-        return ";".join(map(str, COLORS["black"]))
+        return ";".join(map(str, defaults.COLORS["black"]))
 
     def __set_color(self):
         return f"\033[48;2;{self.rgbcolor(self.background)}m\033[38;2;{self.rgbcolor(self.foreground)}m"

@@ -32,8 +32,8 @@ INHERITABLE_STYLES: list[StyleProperty] = ["color", "background"]
 
 @dataclass
 class Layout:
-    y: int = 0
     x: int = 0
+    y: int = 0
     width: int = 0
     height: int = 0
 
