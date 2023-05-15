@@ -226,6 +226,20 @@ class Component:
             if ret:
                 return ret
 
+    def queryParent(self, query: css.Selector | str):
+        """
+        Query parents until finds an element that matches (me included)
+        """
+        if isinstance(query, str):
+            query = css.Selector(query)
+        if query.match(self):
+            return self
+        for parent in self.parentTraversal():
+            ret = parent.queryElement(query)
+            if ret:
+                return ret
+        return None
+
     def preorderTraversal(self):
         yield self
         for child in self.children:

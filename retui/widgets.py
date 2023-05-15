@@ -204,7 +204,7 @@ class select(Paintable):
         on_change(ev)
 
     def handleKeyPress(self, ev: EventKeyPress):
-        if not self.children or not self.state["open"]:
+        if not self.children or not self.isOpen():
             return
         current = self.queryElement(":focus")
         if not current:

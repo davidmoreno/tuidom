@@ -61,12 +61,12 @@ class Selector:
         if mdict["class"]:
             classes = mdict["class"].split(".")[1:]
             self.classes = classes
-            self.priority += 10 * len(classes)
+            self.priority += 100 * len(classes)
         if mdict["pseudo"]:
-            self.priority += 1
+            self.priority += 10
             self.pseudo = mdict["pseudo"].split(":")[1:]
         if mdict["pseudo2"]:
-            self.priority += 1
+            self.priority += 10
             self.pseudo = (self.pseudo or []) + mdict["pseudo2"].split(":")[1:]
 
         if self.pseudo is None:

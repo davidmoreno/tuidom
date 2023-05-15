@@ -74,8 +74,11 @@ class FileSelector(Component):
         return div(on_keypress=self.handleKeyPress, className="w-full flex-1")[
             [
                 button(
-                    className="w-full",
-                    on_click=lambda ev: self.handleSelectedFile(filename),
+                    className="w-full bg-secondary",
+                    value=filename,
+                    on_click=lambda ev: self.handleSelectedFile(
+                        ev.target.queryParent("button").props["value"]
+                    ),
                 )[filename]
                 for filename in self.state["files"]
             ]
