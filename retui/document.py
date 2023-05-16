@@ -143,6 +143,8 @@ class Document(HandleEventTrait, Component):
         self.layout.x = 0
         self.calculateLayoutPosition()
 
+        return self
+
     def paint(self, renderer: Renderer):
         self.calculateLayout(renderer.width, renderer.height)
 

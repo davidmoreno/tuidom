@@ -88,7 +88,7 @@ class FileSelector(Component):
 
 def OpenfileDialog(onAccept: callable, onCancel: callable):
     return dialog()[
-        FileSelector(path="..", className="flex-1"),
+        FileSelector(path=".", className="flex-1"),
         span()[
             span(className="flex-1"),
             button(on_click=lambda ev: onAccept())[" Accept "],

@@ -152,6 +152,8 @@ class Component:
             self.__mounted = True
             self.componentDidMount()
 
+        return self
+
     def reconcile(self, parent, leftchildren, rightchildren):
         # logger.debug("Reconcile two lists: %s <-> %s",
         #              leftchildren, rightchildren)
@@ -203,7 +205,6 @@ class Component:
             if key.startswith("on_"):
                 return True
         return False
-
 
     def updateProps(self, other):
         # logger.debug("%s Update props: %s from %s",
@@ -531,11 +532,32 @@ class Component:
             print(f'{" " * indent}<{self.name} {props} {state} {pseudo}/>')
 
 
+def renderer_clipping(func):
+    def wrapper(self, renderer):
+        layout = self.layout
+        pmin_x = renderer.min_x
+        pmin_y = renderer.min_y
+        pmax_x = renderer.max_x
+        pmax_y = renderer.max_y
+
+        renderer.setClippingRegion(
+            layout.x, layout.y, layout.x + layout.width, layout.y + layout.height
+        )
+        try:
+            func(self, renderer)
+        finally:
+            renderer.setClippingRegion(pmin_x, pmin_y, pmax_x, pmax_y)
+
+    wrapper.__name__ = func.__name__
+    return wrapper
+
+
 class Paintable(HandleEventTrait, Component):
     """
     This component can be painted with the given renderer
     """
 
+    @renderer_clipping
     def paint(self, renderer: Renderer):
         color = self.getStyle("color")
         if color:
@@ -608,6 +630,7 @@ class Text(Paintable):
     def __init__(self, text, **props):
         super().__init__(text=text, **props)
 
+    @renderer_clipping
     def paint(self, renderer: Renderer):
         text = self.props.get("text")
         if text:
@@ -636,8 +659,12 @@ class Text(Paintable):
         width = max(len(x) for x in text)
         if width < min_width:
             width = min_width
+        if width > max_width:
+            width = max_width
         if height < min_height:
             height = min_height
+        if height > max_height:
+            height = max_height
 
         # if height > max_height:
         #     logger.warning("Text too big for viewport: %s %s %s",

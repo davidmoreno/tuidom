@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Generator, Tuple
@@ -65,6 +66,13 @@ class BufferedRenderer(Renderer):
             y = self.max_y
 
         return x, y
+
+    @contextmanager
+    def setClippingRegion(self, min_x, min_y, max_x, max_y):
+        self.min_x = min_x
+        self.min_y = min_y
+        self.max_x = max_x
+        self.max_y = max_y
 
     def addZIndex(self, z_index):
         self.zIndex += z_index

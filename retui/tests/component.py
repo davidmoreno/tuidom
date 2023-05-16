@@ -256,3 +256,10 @@ class ComponentTestCase(TestCase):
         self.assertEqual(item.getStyle("paddingRight"), 3)
         self.assertEqual(item.getStyle("paddingBottom"), 4)
         self.assertEqual(item.getStyle("paddingLeft"), 5)
+
+    def test_overflow(self):
+        app = Document()[div(style={"width": 4})["Texto Largo"]]
+        app.materialize().calculateLayout(25, 80)
+        app.prettyPrint()
+
+        self.assertEqual(app.queryElement("Text").layout.width, 4)
