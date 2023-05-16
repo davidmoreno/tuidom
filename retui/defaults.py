@@ -149,6 +149,24 @@ DEFAULT_CSS = {
     ".scroll-y": {
         "overflowY": "scroll",
     },
+    ".color-primary": {
+        "background": "fg-primary",
+    },
+    ".color-secondary": {
+        "background": "fg-secondary",
+    },
+    ".color-tertiary": {
+        "background": "fg-tertiary",
+    },
+    ".bg-primary": {
+        "background": "bg-primary",
+    },
+    ".bg-secondary": {
+        "background": "bg-secondary",
+    },
+    ".bg-tertiary": {
+        "background": "bg-tertiary",
+    },
 }
 
 
