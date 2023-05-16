@@ -74,7 +74,8 @@ class FileSelector(Component):
         return div(on_keypress=self.handleKeyPress, className="w-full flex-1")[
             [
                 button(
-                    className="w-full bg-secondary",
+                    id=filename,
+                    className="w-full bg-tertiary",
                     value=filename,
                     on_click=lambda ev: self.handleSelectedFile(
                         ev.target.queryParent("button").props["value"]
@@ -122,12 +123,21 @@ class App(Document):
     def quit(self):
         self.document.on_event(EventExit(0))
 
+    def handleMenu(self, menu_id):
+        match menu_id:
+            case "open":
+                self.setState({"openDialog": True})
+            case "close":
+                self.setState({"openDialog": False})
+            case "quit":
+                self.quit()
+
     def render(self):
         return [
             header()[
                 select(
                     label="File",
-                    on_change=lambda ev: self.setState({"openDialog": True}),
+                    on_change=lambda ev: self.handleMenu(ev.value),
                 )[
                     option(value="open")["Open..."],
                     option(value="close")["Close"],
