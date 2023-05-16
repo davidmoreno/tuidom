@@ -143,8 +143,8 @@ class StyleSheet:
         for selector, style in self.rules:
             pri = selector.match(component)
             # print(selector, pri, key, value)
-            if pri and pri > priority:
-                value = style.get(key) or value
+            if pri and pri >= priority and key in style:
+                value = style[key]
                 priority = pri
         return value
 

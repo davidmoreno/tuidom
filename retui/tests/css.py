@@ -59,7 +59,7 @@ class CssTestCase(TestCase):
         self.assertEqual(stylesheet.getStyle(element, "paddingTop"), None)
         self.assertEqual(stylesheet.getStyle(element, "z-index"), 100)
 
-        app = Document()[button(className="bg-tertiary")["Click here"]]
+        app = Document()[button(className="w-full bg-tertiary")["Click here"]]
         app.materialize()
         buttonel = app.queryElement("button")
         self.assertEqual(buttonel.getStyle("background"), "bg-tertiary")

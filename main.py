@@ -75,7 +75,7 @@ class FileSelector(Component):
             [
                 button(
                     id=filename,
-                    className="w-full bg-tertiary",
+                    className="w-full bg-tertiary color-tertiary bg-primary-focus color-tertiary-focus",
                     value=filename,
                     on_click=lambda ev: self.handleSelectedFile(
                         ev.target.queryParent("button").props["value"]
@@ -164,7 +164,7 @@ class App(Document):
                 ],
                 input(className="bg-tertiary text-tertiary w-full"),
                 textarea(
-                    className="bg-tertiary text-tertiary w-full",
+                    className="bg-tertiary color-tertiary w-full bg-primary-focus color-primary-focus",
                     rows=10,
                     maxRows=10,
                 ),

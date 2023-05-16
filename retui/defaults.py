@@ -150,13 +150,13 @@ DEFAULT_CSS = {
         "overflowY": "scroll",
     },
     ".color-primary": {
-        "background": "fg-primary",
+        "color": "text-primary",
     },
     ".color-secondary": {
-        "background": "fg-secondary",
+        "color": "text-secondary",
     },
     ".color-tertiary": {
-        "background": "fg-tertiary",
+        "color": "text-tertiary",
     },
     ".bg-primary": {
         "background": "bg-primary",
@@ -166,6 +166,24 @@ DEFAULT_CSS = {
     },
     ".bg-tertiary": {
         "background": "bg-tertiary",
+    },
+    ".bg-primary-focus:focus": {
+        "background": "bg-primary",
+    },
+    ".bg-secondary-focus:focus": {
+        "background": "bg-secondary",
+    },
+    ".bg-tertiary-focus:focus": {
+        "background": "bg-tertiary",
+    },
+    ".color-primary-focus:focus": {
+        "color": "text-primary",
+    },
+    ".color-secondary-focus:focus": {
+        "color": "text-secondary",
+    },
+    ".color-tertiary-focus:focus": {
+        "color": "text-tertiary",
     },
 }
 
