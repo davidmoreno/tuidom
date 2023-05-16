@@ -47,18 +47,10 @@ class Document(HandleEventTrait, Component):
         self.document = self
         self.materialize()
 
-    def is_focusable(self, item: Component):
-        if not isinstance(item, HandleEventTrait):
-            return False
-        for key in item.props.keys():
-            if key.startswith("on_"):
-                return True
-        return False
-
     def nextFocus(self):
         prev = self.currentFocusedElement
         for child in self.preorderTraversal():
-            if self.is_focusable(child):
+            if child.isFocusable():
                 if prev is None:
                     return self.setFocus(child)
                 elif prev is child:
@@ -69,7 +61,7 @@ class Document(HandleEventTrait, Component):
         current = self.currentFocusedElement
         prev = None
         for child in self.preorderTraversal():
-            if self.is_focusable(child):
+            if child.isFocusable():
                 if current is child:
                     current = prev
                     return self.setFocus(current)
@@ -95,14 +87,15 @@ class Document(HandleEventTrait, Component):
             self.nextFocus()
         if event.keycode == "RTAB":
             self.prevFocus()
-        if event.keycode == "ENTER":
-            self.on_event(EventMouseClick([1], (0, 0)))
+        if event.keycode == "ENTER" and self.currentFocusedElement:
+            layout = self.currentFocusedElement.layout
+            self.on_event(EventMouseClick([1], (layout.x, layout.y)))
 
     def on_event(self, ev: Event):
         def handle_event(ev: Event):
             if isinstance(ev, EventMouseClick):
                 for el in ev.target.parentTraversal():
-                    if self.is_focusable(el):
+                    if el.isFocusable():
                         self.setFocus(el)
                         break
 

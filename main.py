@@ -75,7 +75,7 @@ class FileSelector(Component):
             [
                 button(
                     id=filename,
-                    className="w-full bg-tertiary color-tertiary bg-primary-focus color-tertiary-focus",
+                    className="w-full bg-tertiary color-tertiary bg-secondary-focus color-secondary-focus",
                     value=filename,
                     on_click=lambda ev: self.handleSelectedFile(
                         ev.target.queryParent("button").props["value"]

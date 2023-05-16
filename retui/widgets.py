@@ -41,6 +41,9 @@ class input(Paintable):
         "value": "",
     }
 
+    def __init__(self, **kwargs):
+        super().__init__(on_keypress=self.handleKeyPress, **kwargs)
+
     def maxRows(self):
         return 1
 
@@ -178,7 +181,7 @@ class input(Paintable):
         )
 
     def render(self):
-        return Text(self.getValue(), on_keypress=self.handleKeyPress)
+        return Text(self.getValue())
 
 
 class textarea(input):

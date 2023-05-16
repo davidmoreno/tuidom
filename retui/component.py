@@ -196,6 +196,15 @@ class Component:
 
         return False
 
+    def isFocusable(self):
+        if not isinstance(self, HandleEventTrait):
+            return False
+        for key in self.props.keys():
+            if key.startswith("on_"):
+                return True
+        return False
+
+
     def updateProps(self, other):
         # logger.debug("%s Update props: %s from %s",
         #              self, self.props, other.props)
