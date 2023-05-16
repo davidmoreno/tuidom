@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from retui import css
 from retui.document import Document
-from retui.widgets import body, div, textarea
+from retui.widgets import body, button, div, textarea
 
 
 class CssTestCase(TestCase):
@@ -58,6 +58,12 @@ class CssTestCase(TestCase):
         self.assertEqual(stylesheet.getStyle(element, "borderTop"), 1)
         self.assertEqual(stylesheet.getStyle(element, "paddingTop"), None)
         self.assertEqual(stylesheet.getStyle(element, "z-index"), 100)
+
+        app = Document()[button(className="bg-tertiary")["Click here"]]
+        app.materialize()
+        buttonel = app.queryElement("button")
+        self.assertEqual(buttonel.getStyle("background"), "bg-tertiary")
+        self.assertEqual(buttonel.children[0].getStyle("background"), "bg-tertiary")
 
     def test_css_at_document(self):
         class App(Document):
