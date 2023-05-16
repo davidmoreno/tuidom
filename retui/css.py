@@ -40,12 +40,13 @@ class Selector:
         """
         Compile a rule into the Rule object.
 
-        Normally these rulels are accesses a lot, so fast access is a must.
+        Normally these rules are accesses a lot, so fast access is a must.
         """
         self.selector = selector
+        self.pseudo = []
+        self.classes = []
 
         match = CSS_SELECTOR_RE.match(selector)
-        pri = 0
         if not match:
             logger.warning("Invalid selector: %s", selector)
             self.priority = -1
