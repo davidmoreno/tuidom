@@ -7,6 +7,7 @@ import sys
 
 from retui import Component, Document, XtermRenderer
 from retui.bufferrenderer import BufferedRenderer
+from retui.component import Scrollable
 from retui.events import EventMouseClick, EventExit, EventKeyPress
 from retui.widgets import (
     body,
@@ -71,7 +72,10 @@ class FileSelector(Component):
     def render(self):
         if self.state["files"] is False:
             return div()["Loading..."]
-        return div(on_keypress=self.handleKeyPress, className="w-full flex-1")[
+        return div(
+            # on_keypress=self.handleKeyPress,
+            className="w-full flex-1"
+        )[
             [
                 button(
                     id=filename,
@@ -88,7 +92,7 @@ class FileSelector(Component):
 
 def OpenfileDialog(onAccept: callable, onCancel: callable):
     return dialog()[
-        FileSelector(path=".", className="flex-1"),
+        Scrollable()[FileSelector(path=".", className="flex-1"),],
         span()[
             span(className="flex-1"),
             button(on_click=lambda ev: onAccept())[" Accept "],

@@ -26,6 +26,9 @@ class Renderer:
     width = 80
     height = 25
 
+    translate_x = 0
+    translate_y = 0
+
     def fillRect(self, x, y, width, height):
         """
         Orig is (width, height). All pairs are like this: (x, y).

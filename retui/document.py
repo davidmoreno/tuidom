@@ -132,6 +132,8 @@ class Document(HandleEventTrait, Component):
             handle_event(ev)
 
         # not handled
+        if ev.stopPropagation:
+            return
 
     def findElementAt(self, x: int, y: int):
         _z, el = super().findElementAt(x, y)

@@ -33,6 +33,7 @@ DEFAULT_CSS = {
     "App": {
         "flex-direction": "column",
     },
+    "Scrollable": {},
     "header": {
         "flex-direction": "row",
         "color": "text-secondary",

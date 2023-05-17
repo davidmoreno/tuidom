@@ -69,10 +69,10 @@ class BufferedRenderer(Renderer):
 
     @contextmanager
     def setClippingRegion(self, min_x, min_y, max_x, max_y):
-        self.min_x = min_x
-        self.min_y = min_y
-        self.max_x = max_x
-        self.max_y = max_y
+        self.min_x = min_x + self.translate_x
+        self.min_y = min_y + self.translate_y
+        self.max_x = max_x + self.translate_x
+        self.max_y = max_y + self.translate_y
 
     def addZIndex(self, z_index):
         self.zIndex += z_index
@@ -94,9 +94,13 @@ class BufferedRenderer(Renderer):
         self.screen[pos] = char.update(zIndex=self.zIndex)
 
     def setCursor(self, x, y):
+        x += self.translate_x
+        y += self.translate_y
         self.cursor = (x, y)
 
     def fillRect(self, x, y, width, height):
+        x += self.translate_x
+        y += self.translate_y
         cur = ScreenChar(
             char=" ",
             bg=self.background,
@@ -120,6 +124,8 @@ class BufferedRenderer(Renderer):
                     self.screen[p] = cur
 
     def fillText(self, text, x, y, bold=False, italic=False, underline=False):
+        x += self.translate_x
+        y += self.translate_y
         for lineno, line in enumerate(text.split("\n")):
             py = y + lineno
             if py < 0 or py > self.height:

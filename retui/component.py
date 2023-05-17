@@ -4,7 +4,7 @@ import logging
 import math
 
 from retui import css
-from .events import HandleEventTrait
+from .events import EventKeyPress, HandleEventTrait
 from .renderer import Renderer
 
 logger = logging.getLogger(__name__)
@@ -586,43 +586,6 @@ class Paintable(HandleEventTrait, Component):
                     self.layout.height,
                 )
 
-            scrollbar = "▲┃█▼◀━█▶"
-            scrollbar = "▕▕█▕▁▁▄▁"
-            # scrollbar = "  █   █ "
-            # scrollbar = "┃┃█┃━━◼━"
-            has_scrollbar_y = self.getStyle("overflowY") == "scroll"
-            if has_scrollbar_y:
-                x = self.layout.x + self.layout.width - 1
-                miny = self.layout.y
-                maxy = self.layout.y + self.layout.height - 1
-                if border:
-                    miny += 1
-                    maxy -= 1
-                if miny + 2 < maxy:
-                    renderer.fillText(scrollbar[0], x, miny)
-                    for y in range(miny + 1, maxy):
-                        renderer.fillText(scrollbar[1], x, y)
-                    for y in range(miny + 3, miny + 5):
-                        renderer.fillText(scrollbar[2], x, y)
-
-                    renderer.fillText(scrollbar[3], x, maxy)
-
-            has_scrollbar_x = self.getStyle("overflowX") == "scroll"
-            if has_scrollbar_x:
-                y = self.layout.y + self.layout.height - 1
-                minx = self.layout.x
-                maxx = self.layout.x + self.layout.width - 1
-                if border:
-                    minx += 1
-                    maxx -= 1
-                if minx + 2 < maxx:
-                    renderer.fillText(scrollbar[4], minx, y)
-                    for x in range(minx + 1, maxx):
-                        renderer.fillText(scrollbar[5], x, y)
-                    for x in range(minx + 3, minx + 40):
-                        renderer.fillText(scrollbar[6], x, y)
-
-                    renderer.fillText(scrollbar[7], maxx, y)
         super().paint(renderer)
 
 
@@ -677,3 +640,78 @@ class Text(Paintable):
         self.layout.height = height
 
         return (width, height)
+
+
+class Scrollable(Paintable):
+    """
+    This widget can have scrollbars
+    """
+
+    state = {
+        "x": 0,
+        "y": 0,
+    }
+
+    def __init__(self, **kwargs):
+        super().__init__(on_keypress=self.handleKeyPress, **kwargs)
+
+    def handleKeyPress(self, ev: EventKeyPress):
+        if ev.keycode == "UP":
+            self.setState({"y": self.state["y"] - 1})
+            ev.stopPropagation = True
+        if ev.keycode == "DOWN":
+            self.setState({"y": self.state["y"] + 1})
+            ev.stopPropagation = True
+
+    def calculateLayoutSizes(self, min_width, min_height, max_width, max_height):
+        w, h = super().calculateLayoutSizes(
+            min_width, min_height, max_width - 1, max_height - 1
+        )
+        self.layout.width += 1
+        self.layout.height += 1
+        return (w + 1, h + 1)
+
+    @renderer_clipping
+    def paint(self, renderer: Renderer):
+        scrollbar = "▲┃█▼◀━█▶"
+        scrollbar = "▕▕█▕▁▁▄▁"
+        # scrollbar = "  █   █ "
+        # scrollbar = "┃┃█┃━━◼━"
+        has_scrollbar_y = True  # self.getStyle("overflowY") == "scroll"
+        if has_scrollbar_y:
+            x = self.layout.x + self.layout.width - 1
+            miny = self.layout.y
+            maxy = self.layout.y + self.layout.height - 1
+            if miny + 2 < maxy:
+                renderer.fillText(scrollbar[0], x, miny)
+                for y in range(miny + 1, maxy):
+                    renderer.fillText(scrollbar[1], x, y)
+                for y in range(miny + 3, miny + 5):
+                    renderer.fillText(scrollbar[2], x, y)
+
+                renderer.fillText(scrollbar[3], x, maxy)
+
+        has_scrollbar_x = True  # self.getStyle("overflowX") == "scroll"
+        if has_scrollbar_x:
+            y = self.layout.y + self.layout.height - 1
+            minx = self.layout.x
+            maxx = self.layout.x + self.layout.width - 1
+            if minx + 2 < maxx:
+                renderer.fillText(scrollbar[4], minx, y)
+                for x in range(minx + 1, maxx):
+                    renderer.fillText(scrollbar[5], x, y)
+                for x in range(minx + 3, minx + 40):
+                    renderer.fillText(scrollbar[6], x, y)
+
+                renderer.fillText(scrollbar[7], maxx, y)
+
+        px = renderer.translate_x
+        py = renderer.translate_y
+        renderer.translate_x = self.state["x"]
+        renderer.translate_y = self.state["y"]
+
+        try:
+            super().paint(renderer)
+        finally:
+            renderer.translate_x = px
+            renderer.translate_y = py
