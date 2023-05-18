@@ -33,7 +33,9 @@ DEFAULT_CSS = {
     "App": {
         "flex-direction": "column",
     },
-    "Scrollable": {},
+    "Scrollable": {
+        # "background": "blue",
+    },
     "header": {
         "flex-direction": "row",
         "color": "text-secondary",
@@ -100,7 +102,7 @@ DEFAULT_CSS = {
         "position": "absolute",
         "background": "bg-tertiary",
         "color": "text-tertiary",
-        "padding": "1 2 0 2",
+        # "padding": "1 2 0 2",
         "border": 1,
         "borderColor": "text-primary",
         "left": 10,

@@ -91,7 +91,9 @@ class FileSelector(Component):
 
 def OpenfileDialog(onAccept: callable, onCancel: callable):
     return dialog()[
-        Scrollable()[FileSelector(path=".", className="flex-1"),],
+        Scrollable(className="flex-1", style={"padding": "1"})[
+            FileSelector(path=".", className="flex-1", on_change=onAccept)
+        ],
         span()[
             span(className="flex-1"),
             button(on_click=lambda ev: onAccept())[" Accept "],
@@ -167,9 +169,9 @@ class App(Document):
                 ],
                 input(className="bg-tertiary text-tertiary w-full"),
                 textarea(
-                    className="bg-tertiary color-tertiary w-full bg-primary-focus color-primary-focus",
-                    rows=10,
-                    maxRows=10,
+                    className="bg-tertiary color-tertiary w-full bg-primary-focus color-primary-focus flex-1",
+                    # rows=10,
+                    # maxRows=10,
                 ),
                 self.state["openDialog"]
                 and OpenfileDialog(

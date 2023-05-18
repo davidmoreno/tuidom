@@ -22,6 +22,9 @@ class Layout:
             self.y <= y < (self.y + self.height)
         )
 
+    def as_clipping(self):
+        return ((self.x, self.y), (self.x + self.width, self.y + self.height))
+
 
 class Component:
     """
@@ -309,7 +312,9 @@ class Component:
             logger.warning("Invalid width rule: %s", rule)
         return None
 
-    def calculateLayoutSizes(self, min_width, min_height, max_width, max_height):
+    def calculateLayoutSizes(
+        self, min_width, min_height, max_width, max_height, clip=True
+    ):
         """
         Calculates the layout inside the desired rectangle.
 
@@ -355,7 +360,6 @@ class Component:
             self.getStyle("paddingLeft", 0)
             + self.getStyle("paddingRight", 0)
             + (self.getStyle("border", 0) and 2)
-            + (1 if self.getStyle("overflowY") == "scroll" else 0)
         )
         height += (
             self.getStyle("paddingTop", 0)
@@ -363,11 +367,12 @@ class Component:
             + (self.getStyle("border", 0) and 2)
         )
 
-        width = min(max_width, max(width, min_width))
-        height = min(max_height, max(height, min_height))
+        if clip:
+            width = min(max_width, max(width, min_width))
+            height = min(max_height, max(height, min_height))
 
-        self.layout.width = width
-        self.layout.height = height
+            self.layout.width = width
+            self.layout.height = height
 
         return (width, height)
 
@@ -533,12 +538,10 @@ class Component:
 
 
 def renderer_clipping(func):
-    def wrapper(self, renderer: Renderer):
+    def wrapper(self: Component, renderer: Renderer):
         layout = self.layout
 
-        renderer.pushClipping(
-            ((layout.x, layout.y), (layout.x + layout.width, layout.y + layout.height))
-        )
+        renderer.pushClipping(layout.as_clipping())
         try:
             func(self, renderer)
         finally:
@@ -553,7 +556,6 @@ class Paintable(HandleEventTrait, Component):
     This component can be painted with the given renderer
     """
 
-    @renderer_clipping
     def paint(self, renderer: Renderer):
         color = self.getStyle("color")
         if color:
@@ -589,7 +591,6 @@ class Text(Paintable):
     def __init__(self, text, **props):
         super().__init__(text=text, **props)
 
-    @renderer_clipping
     def paint(self, renderer: Renderer):
         text = self.props.get("text")
         if text:
@@ -640,28 +641,58 @@ class Scrollable(Paintable):
         "x": 0,
         "y": 0,
     }
+    innerLayout = Layout()
 
     def __init__(self, **kwargs):
         super().__init__(on_keypress=self.handleKeyPress, **kwargs)
 
     def handleKeyPress(self, ev: EventKeyPress):
         if ev.keycode == "UP":
-            self.setState({"y": self.state["y"] - 1})
+            self.setState({"y": self.state["y"] + 1})
             ev.stopPropagation = True
         if ev.keycode == "DOWN":
-            self.setState({"y": self.state["y"] + 1})
+            self.setState({"y": self.state["y"] - 1})
+            ev.stopPropagation = True
+        if ev.keycode == "LEFT":
+            self.setState({"x": self.state["x"] + 1})
+            ev.stopPropagation = True
+        if ev.keycode == "RIGHT":
+            self.setState({"x": self.state["x"] - 1})
             ev.stopPropagation = True
 
     def calculateLayoutSizes(self, min_width, min_height, max_width, max_height):
         w, h = super().calculateLayoutSizes(
-            min_width, min_height, max_width - 1, max_height - 1
+            min_width, min_height, max_width, max_height
         )
-        self.layout.width += 1
-        self.layout.height += 1
-        return (w + 1, h + 1)
+        self.innerLayout.width = w
+        self.innerLayout.height = h
+        self.layout.width = max_width
+        self.layout.height = max_height
+        return (self.layout.width, self.layout.height)
 
-    @renderer_clipping
     def paint(self, renderer: Renderer):
+        # first fill background
+        background = self.getStyle("background")
+        renderer.setBackground(background)
+        renderer.fillRect(
+            self.layout.x,
+            self.layout.y,
+            self.layout.width,
+            self.layout.height,
+        )
+
+        renderer.pushTranslate((self.state["x"], self.state["y"]))
+        renderer.pushClipping(self.layout.as_clipping())
+        try:
+            super().paint(renderer)
+        finally:
+            renderer.popClipping()
+            renderer.popTranslate()
+
+        renderer.setBackground(background)
+        foreground = self.getStyle("color")
+        renderer.setForeground(foreground)
+
         scrollbar = "▲┃█▼◀━█▶"
         scrollbar = "▕▕█▕▁▁▄▁"
         # scrollbar = "  █   █ "
@@ -671,11 +702,16 @@ class Scrollable(Paintable):
             x = self.layout.x + self.layout.width - 1
             miny = self.layout.y
             maxy = self.layout.y + self.layout.height - 1
+            oh = self.layout.height
+            ih = self.innerLayout.height
+
+            ty = -self.state["y"]
+            by = -self.state["y"] + 1
             if miny + 2 < maxy:
                 renderer.fillText(scrollbar[0], x, miny)
                 for y in range(miny + 1, maxy):
                     renderer.fillText(scrollbar[1], x, y)
-                for y in range(miny + 3, miny + 5):
+                for y in range(miny + ty, miny + by):
                     renderer.fillText(scrollbar[2], x, y)
 
                 renderer.fillText(scrollbar[3], x, maxy)
@@ -685,17 +721,14 @@ class Scrollable(Paintable):
             y = self.layout.y + self.layout.height - 1
             minx = self.layout.x
             maxx = self.layout.x + self.layout.width - 1
+
+            tx = -self.state["x"]
+            bx = -self.state["x"] + 1
             if minx + 2 < maxx:
                 renderer.fillText(scrollbar[4], minx, y)
                 for x in range(minx + 1, maxx):
                     renderer.fillText(scrollbar[5], x, y)
-                for x in range(minx + 3, minx + 40):
+                for x in range(minx + tx, minx + bx):
                     renderer.fillText(scrollbar[6], x, y)
 
                 renderer.fillText(scrollbar[7], maxx, y)
-
-        renderer.pushTranslate((self.state["x"], self.state["y"]))
-        try:
-            super().paint(renderer)
-        finally:
-            renderer.popTranslate()

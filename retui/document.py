@@ -155,6 +155,8 @@ class Document(HandleEventTrait, Component):
         renderer.fillRect(0, 0, renderer.width, renderer.height)
 
         super().paint(renderer)
+        assert len(renderer.translateStack) == 1
+        assert len(renderer.clippingStack) == 1
 
         # super().paint(renderer)
         self.setCursor(renderer)

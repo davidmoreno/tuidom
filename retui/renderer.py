@@ -96,7 +96,8 @@ class Renderer:
         self.translate = trns
 
     def popTranslate(self):
-        self.translate = self.translateStack.pop()
+        self.translateStack.pop()
+        self.translate = self.translateStack[-1]
         return self.translate
 
     def pushClipping(self, clipping):
@@ -104,7 +105,8 @@ class Renderer:
         self.clipping = clipping
 
     def popClipping(self):
-        self.clipping = self.clippingStack.pop()
+        self.clippingStack.pop()
+        self.clipping = self.clippingStack[-1]
         return self.clipping
 
     def addZIndex(self, z_index):
