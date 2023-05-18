@@ -13,7 +13,7 @@ from retui.events import (
     EventMouseDown,
     EventMouseUp,
 )
-from .renderer import Renderer
+from .renderer import Renderer, ScreenChar
 from retui import defaults
 
 
@@ -22,16 +22,7 @@ class XtermRenderer(Renderer):
     Implementation for Xterm
     """
 
-    foreground = "white"
-    background = "blue"
-    lineWidth = 1  # depending on width the stroke will use diferent unicode chars
-
-    stdout = None
-    stdin = None
-    prev_mouse_buttons = 0
-
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
         self.stdout = sys.stdout
         self.stdin = sys.stdin
 
@@ -39,6 +30,8 @@ class XtermRenderer(Renderer):
         self.width = width
         # TODO Fix last row can not be fill until the end or does a CR
         self.height = height - 1
+        super().__init__(**kwargs)
+
         self.captureKeyboard(True)
         self.pushScreen()
 
@@ -63,19 +56,17 @@ class XtermRenderer(Renderer):
     def popScreen(self):
         print("\033[?1049l")
 
-    def print(self, *str_or_list):
-        """
-        Indirect call just in case there are optimization oportunities
-        """
-        self.stdout.write(strlist_to_str(str_or_list))
-
     def flush(self):
+        super().flush()
+        self.print(self.__set_cursor(self.cursor[0], self.cursor[1]))
         self.stdout.flush()
 
     def close(self):
         # recover saved state
         self.captureKeyboard(False)
         self.popScreen()
+
+    prev_mouse_buttons = []
 
     def readEvents(self) -> Generator[Event, None, None]:
         try:
@@ -119,6 +110,12 @@ class XtermRenderer(Renderer):
             except:
                 pass
 
+        if key == "CONTROL-L":
+            self.screen_back = [
+                ScreenChar() for _ in range(0, self.width * self.height)
+            ]
+            self.flush()
+
         yield EventKeyPress(key)
 
     def rgbcolor(self, color: str):
@@ -138,115 +135,38 @@ class XtermRenderer(Renderer):
 
         return ";".join(map(str, defaults.COLORS["black"]))
 
-    def __set_color(self):
-        return f"\033[48;2;{self.rgbcolor(self.background)}m\033[38;2;{self.rgbcolor(self.foreground)}m"
+    def __set_color(self, bg, fg):
+        return f"\033[48;2;{self.rgbcolor(bg)}m\033[38;2;{self.rgbcolor(fg)}m"
 
-    def fillText(self, text, x, y, bold=False, italic=False, underline=False):
-        if y < 0 or y > self.height:
-            return
-        if bold:
+    def renderLine(self, x: int, y: int, chr: ScreenChar):
+        if chr.bold:
             self.print(
                 f"\033[1m",
             )
-        if italic:
+        if chr.italic:
             self.print(
                 f"\033[3m",
             )
-        if underline:
+        if chr.underline:
             self.print(
                 f"\033[4m",
             )
 
-        for lineno, line in enumerate(text.split("\n")):
-            py = y + lineno
-            if py < 0 or py > self.height:
-                continue
-            self.print(
-                self.__set_color(),
-                self.__set_cursor(x, py),
-                # f"\033[{py};{x}H",  # position
-                line,
-            )
+        self.print(
+            self.__set_color(chr.background, chr.foreground),
+            self.__set_cursor(x, y),
+            chr.text,
+        )
 
-        if bold or italic or underline:
+        if chr.bold or chr.italic or chr.underline:
             self.print(
                 f"\033[0m",  # normal
             )
 
-    def fillRect(self, x, y, width, height):
-        self.print(
-            self.__set_color(),
-            [
-                [
-                    self.__set_cursor(x, top),
-                    " " * width,  # write bg lines
-                ]
-                for top in range(y, y + height)
-            ],
-        )
-
-    def setCursor(self, x, y):
-        self.print(self.__set_cursor(x, y))
-
-    def setBackground(self, color):
-        if self.background != color:
-            self.background = color
-            self.print(self.__set_color())
-
-    def setForeground(self, color):
-        if self.foreground != color:
-            self.foreground = color
-            self.print(self.__set_color())
-
-    def setLineWidth(self, width):
-        self.lineWidth = width
-
     def __set_cursor(self, x, y):
         return (f"\033[{y+1};{x+1}H",)  # position
 
-    def fillStroke(self, x, y, width, height):
-        """
-        Draw rects with border
-        """
-        self.fillRect(x, y, width, height)
-        # if self.lineWidth == 0:
-        #     table_chars = "╭╮╰╯┄┆"
-        if self.lineWidth == 1:
-            table_chars = "│┌─┐└─┘│"
-        elif self.lineWidth == 2:
-            table_chars = "┃┏━┓┗━┛┃"
-        elif self.lineWidth == 3:
-            table_chars = "║╔═╗╚═╝║"
-        elif self.lineWidth >= 4:
-            table_chars = "▐▛▀▜▙▄▟▌"
-
-        self.print(self.__set_cursor(x, y))
-        self.print(table_chars[1], table_chars[2] * (width - 2), table_chars[3])
-        for ny in range(y + 1, y + height):
-            self.print(self.__set_cursor(x, ny))
-            self.print(table_chars[7])
-            self.print(self.__set_cursor(x + width - 1, ny))
-            self.print(table_chars[0])
-        self.print(self.__set_cursor(x, y + height - 1))
-        self.print(
-            table_chars[4],
-            table_chars[5] * (width - 2),
-            table_chars[6],
-        )
-
     def breakpoint(self, callback=None, document=None):
         self.captureKeyboard(False)
-
-        self.foreground = "white"
-        self.background = "black"
-        self.setCursor(1, 1)
-        self.fillRect(1, 1, self.width, self.height)
         super().breakpoint(callback, document)
-
         self.captureKeyboard(True)
-
-
-def strlist_to_str(strl):
-    if isinstance(strl, str):
-        return strl
-    return "".join(strlist_to_str(x) for x in strl)

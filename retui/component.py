@@ -533,20 +533,16 @@ class Component:
 
 
 def renderer_clipping(func):
-    def wrapper(self, renderer):
+    def wrapper(self, renderer: Renderer):
         layout = self.layout
-        pmin_x = renderer.min_x
-        pmin_y = renderer.min_y
-        pmax_x = renderer.max_x
-        pmax_y = renderer.max_y
 
-        renderer.setClippingRegion(
-            layout.x, layout.y, layout.x + layout.width, layout.y + layout.height
+        renderer.pushClipping(
+            ((layout.x, layout.y), (layout.x + layout.width, layout.y + layout.height))
         )
         try:
             func(self, renderer)
         finally:
-            renderer.setClippingRegion(pmin_x, pmin_y, pmax_x, pmax_y)
+            renderer.popClipping()
 
     wrapper.__name__ = func.__name__
     return wrapper
@@ -629,13 +625,6 @@ class Text(Paintable):
         if height > max_height:
             height = max_height
 
-        # if height > max_height:
-        #     logger.warning("Text too big for viewport: %s %s %s",
-        #                    self, width, height)
-        # if width > max_width:
-        #     logger.warning("Text too big for viewport: %s %s %s",
-        #                    self, width, height)
-
         self.layout.width = width
         self.layout.height = height
 
@@ -705,13 +694,8 @@ class Scrollable(Paintable):
 
                 renderer.fillText(scrollbar[7], maxx, y)
 
-        px = renderer.translate_x
-        py = renderer.translate_y
-        renderer.translate_x = self.state["x"]
-        renderer.translate_y = self.state["y"]
-
+        renderer.pushTranslate((self.state["x"], self.state["y"]))
         try:
             super().paint(renderer)
         finally:
-            renderer.translate_x = px
-            renderer.translate_y = py
+            renderer.popTranslate()

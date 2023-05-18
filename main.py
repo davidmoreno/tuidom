@@ -6,7 +6,6 @@ import pathlib
 import sys
 
 from retui import Component, Document, XtermRenderer
-from retui.bufferrenderer import BufferedRenderer
 from retui.component import Scrollable
 from retui.events import EventMouseClick, EventExit, EventKeyPress
 from retui.widgets import (
@@ -186,11 +185,7 @@ class App(Document):
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    argv = sys.argv[1:]
-    if "--xterm" in argv:
-        renderer = XtermRenderer()
-    else:
-        renderer = BufferedRenderer(XtermRenderer())
+    renderer = XtermRenderer()
     root = App()
     root.loop(renderer)
 
