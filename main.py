@@ -169,7 +169,7 @@ class App(Document):
                 ],
                 input(className="bg-tertiary text-tertiary w-full"),
                 textarea(
-                    className="bg-tertiary color-tertiary w-full bg-primary-focus color-primary-focus flex-1",
+                    className="bg-primary color-primary w-full flex-1",
                     # rows=10,
                     # maxRows=10,
                 ),

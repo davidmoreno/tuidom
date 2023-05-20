@@ -647,23 +647,24 @@ class Scrollable(Paintable):
         super().__init__(on_keypress=self.handleKeyPress, **kwargs)
 
     def handleKeyPress(self, ev: EventKeyPress):
-        if ev.keycode == "UP":
-            self.setState({"y": self.state["y"] + 1})
-            ev.stopPropagation = True
-        if ev.keycode == "DOWN":
-            self.setState({"y": self.state["y"] - 1})
-            ev.stopPropagation = True
-        if ev.keycode == "LEFT":
-            self.setState({"x": self.state["x"] + 1})
-            ev.stopPropagation = True
-        if ev.keycode == "RIGHT":
-            self.setState({"x": self.state["x"] - 1})
-            ev.stopPropagation = True
+        match ev.keycode:
+            case "DOWN":
+                maxy = self.innerLayout.height - self.layout.height
+                self.setState({"y": min(self.state["y"] + 1, maxy)})
+                ev.stopPropagation = True
+            case "UP":
+                self.setState({"y": max(self.state["y"] - 1, 0)})
+                ev.stopPropagation = True
+
+            case "LEFT":
+                self.setState({"x": self.state["x"] + 1})
+                ev.stopPropagation = True
+            case "RIGHT":
+                self.setState({"x": self.state["x"] - 1})
+                ev.stopPropagation = True
 
     def calculateLayoutSizes(self, min_width, min_height, max_width, max_height):
-        w, h = super().calculateLayoutSizes(
-            min_width, min_height, max_width, max_height
-        )
+        w, h = super().calculateLayoutSizes(0, 0, 1024, 1024, clip=False)
         self.innerLayout.width = w
         self.innerLayout.height = h
         self.layout.width = max_width
@@ -681,7 +682,7 @@ class Scrollable(Paintable):
             self.layout.height,
         )
 
-        renderer.pushTranslate((self.state["x"], self.state["y"]))
+        renderer.pushTranslate((-self.state["x"], -self.state["y"]))
         renderer.pushClipping(self.layout.as_clipping())
         try:
             super().paint(renderer)
@@ -705,8 +706,8 @@ class Scrollable(Paintable):
             oh = self.layout.height
             ih = self.innerLayout.height
 
-            ty = -self.state["y"]
-            by = -self.state["y"] + 1
+            ty = self.state["y"]
+            by = self.state["y"] + 1
             if miny + 2 < maxy:
                 renderer.fillText(scrollbar[0], x, miny)
                 for y in range(miny + 1, maxy):
