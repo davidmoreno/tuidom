@@ -178,19 +178,26 @@ class Renderer:
     def fillText(self, text, x, y, bold=False, italic=False, underline=False):
         x += self.translate[0]
         y += self.translate[1]
+        char = ScreenChar(
+            background=self.background,
+            foreground=self.foreground,
+            fontModifier=set(
+                x
+                for x in [
+                    bold and ScreenChar.FontModifier.BOLD,
+                    italic and ScreenChar.FontModifier.ITALIC,
+                    underline and ScreenChar.FontModifier.UNDERLINE,
+                ]
+                if x
+            ),
+        )
         for lineno, line in enumerate(text.split("\n")):
             py = y + lineno
-            if py < 0 or py > self.height:
-                continue
             for n, c in enumerate(line):
                 self.drawChar(
                     x + n,
                     py,
-                    ScreenChar(
-                        c,
-                        background=self.background,
-                        foreground=self.foreground,
-                    ),
+                    char.update(char=c),
                 )
 
     def fillStroke(self, x, y, width, height):
