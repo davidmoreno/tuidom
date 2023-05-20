@@ -694,7 +694,7 @@ class Scrollable(Paintable):
         foreground = self.getStyle("color")
         renderer.setForeground(foreground)
 
-        scrollbar = "▲┃█▼◀━█▶"
+        # scrollbar = "▲┃█▼◀━█▶"
         scrollbar = "▕▕█▕▁▁▄▁"
         # scrollbar = "  █   █ "
         # scrollbar = "┃┃█┃━━◼━"

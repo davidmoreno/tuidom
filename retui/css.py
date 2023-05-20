@@ -16,7 +16,13 @@ StyleProperty = Literal[
 ]
 
 # this styles are checked against parents if not defined
-INHERITABLE_STYLES: list[StyleProperty] = ["color", "background"]
+INHERITABLE_STYLES: list[StyleProperty] = [
+    "color",
+    "background",
+    "font-weight",
+    "font-decoration",
+    "font-style",
+]
 
 
 CSS_SELECTOR_RE = re.compile(
