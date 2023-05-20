@@ -120,8 +120,8 @@ class Renderer:
         self.zIndex += z_index
 
     def clip(self, x, y):
-        x = min(max(x, self.clipping[0][0]), self.clipping[1][0])
-        y = min(max(y, self.clipping[0][1]), self.clipping[1][1])
+        x = min(max(x, self.clipping[0][0]), self.clipping[1][0] - 1)
+        y = min(max(y, self.clipping[0][1]), self.clipping[1][1] - 1)
         return (x, y)
 
     def pos(self, x, y):

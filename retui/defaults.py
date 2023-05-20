@@ -161,6 +161,12 @@ DEFAULT_CSS = {
     ".color-tertiary": {
         "color": "text-tertiary",
     },
+    ".items-center": {
+        "align-items": "center",
+    },
+    ".self-center": {
+        "align-self": "center",
+    },
     ".bg-primary": {
         "background": "bg-primary",
     },

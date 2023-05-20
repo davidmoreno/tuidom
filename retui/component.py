@@ -475,6 +475,8 @@ class Component:
 
         # print(self, x, y)
         child: Component
+        def_align = self.getStyle("align-items") or "start"
+        dir_row = self.getStyle("flex-direction") == "row"
         for child in self.children:
             childposition = child.getStyle("position")
 
@@ -491,8 +493,34 @@ class Component:
             else:
                 child.layout.y = y
                 child.layout.x = x
+
+                align = child.getStyle("align-self", def_align)
+                if dir_row:
+                    if align == "start":
+                        child.layout.y = y
+                    elif align == "end":
+                        child.layout.y = (
+                            self.layout.y + self.layout.height - child.layout.height
+                        )
+                    elif align == "center":
+                        child.layout.y = (
+                            self.layout.y
+                            + (self.layout.height - child.layout.height) // 2
+                        )
+                else:
+                    if align == "start":
+                        child.layout.x = x
+                    elif align == "end":
+                        child.layout.x = (
+                            self.layout.x + self.layout.width - child.layout.width
+                        )
+                    elif align == "center":
+                        child.layout.x = (
+                            self.layout.x
+                            + (self.layout.width - child.layout.width) // 2
+                        )
                 child.calculateLayoutPosition()
-                if self.getStyle("flex-direction") == "row":
+                if dir_row:
                     x += child.layout.width
                 else:
                     y += child.layout.height
@@ -591,6 +619,9 @@ class Text(Paintable):
     def __init__(self, text, **props):
         super().__init__(text=text, **props)
 
+    def getStyle(self, csskey: css.StyleProperty, default=None):
+        return self.parent.getStyle(csskey, default)
+
     def paint(self, renderer: Renderer):
         text = self.props.get("text")
         if text:
@@ -664,7 +695,7 @@ class Scrollable(Paintable):
                 ev.stopPropagation = True
 
     def calculateLayoutSizes(self, min_width, min_height, max_width, max_height):
-        w, h = super().calculateLayoutSizes(0, 0, 1024, 1024, clip=False)
+        w, h = super().calculateLayoutSizes(0, 0, 128, 128, clip=False)
         self.innerLayout.width = w
         self.innerLayout.height = h
         self.layout.width = max_width
@@ -696,6 +727,7 @@ class Scrollable(Paintable):
 
         # scrollbar = "▲┃█▼◀━█▶"
         scrollbar = "▕▕█▕▁▁▄▁"
+        scrollbar = "┃┃█┃▁▁▄▁"
         # scrollbar = "  █   █ "
         # scrollbar = "┃┃█┃━━◼━"
         has_scrollbar_y = True  # self.getStyle("overflowY") == "scroll"

@@ -73,7 +73,7 @@ class FileSelector(Component):
             return div()["Loading..."]
         return div(
             # on_keypress=self.handleKeyPress,
-            className="w-full flex-1"
+            className="w-full flex-1 items-center"
         )[
             [
                 button(
@@ -91,6 +91,9 @@ class FileSelector(Component):
 
 def OpenfileDialog(onAccept: callable, onCancel: callable):
     return dialog()[
+        div(
+            className="items-center w-full self-center bold",
+        )["Select file..."],
         Scrollable(className="flex-1", style={"padding": "1"})[
             FileSelector(path=".", className="flex-1", on_change=onAccept)
         ],
