@@ -75,6 +75,8 @@ class Renderer:
     def __init__(self):
         """
         Inheritors, set width and height before calling super().__init__()
+
+        TO IMPLEMENT BY REAL RENDERER
         """
         self.clipping = ((0, 0), (self.width, self.height))
         self.clippingStack = [self.clipping]
@@ -83,11 +85,16 @@ class Renderer:
         self.screen_back = [ScreenChar() for _ in range(0, self.width * self.height)]
 
     def close(self):
+        """
+        TO IMPLEMENT BY REAL RENDERER
+        """
         pass
 
     def renderLine(self, x: int, y: int, chr: ScreenChar):
         """
         Renders a line, given the data at chr, at pos xy
+
+        TO IMPLEMENT BY REAL RENDERER
         """
         pass
 
@@ -236,6 +243,12 @@ class Renderer:
         return []
 
     def flush(self):
+        """
+        Real renderer can need somethign special at flush, and part of it should be calling this
+
+        TO IMPLEMENT BY REAL RENDERER
+
+        """
         p = 0
         prev_char = ScreenChar()
         screen = self.screen
@@ -287,9 +300,6 @@ class Renderer:
         self.screen = screen_back
         for char in self.screen:
             char.zIndex = 0
-
-    def close(self):
-        pass
 
     def breakpoint(self, callback=None, document=None):
         """
