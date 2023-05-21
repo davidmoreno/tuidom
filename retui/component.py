@@ -478,23 +478,48 @@ class Component:
         def_align = self.getStyle("align-items") or "start"
         dir_row = self.getStyle("flex-direction") == "row"
         for child in self.children:
+            align = child.getStyle("align-self", def_align)
+            justify = child.getStyle("justify-self", def_align)
             childposition = child.getStyle("position")
 
             if childposition == "absolute":
-                child.layout.y = (
+                px = 0  # should get it from parent with relative
+                py = 0
+                if dir_row:
+                    if align == "start":
+                        child.layout.y = py
+                    elif align == "center":
+                        child.layout.y = (
+                            py + (self.layout.height - child.layout.height) // 2
+                        )
+                    if justify == "center":
+                        child.layout.x = (
+                            py + (self.layout.height - child.layout.height) // 2
+                        )
+                else:
+                    if align == "start":
+                        child.layout.x = px
+                    elif align == "center":
+                        child.layout.x = (
+                            px + (self.layout.width - child.layout.width) // 2
+                        )
+                    if justify == "center":
+                        child.layout.y = (
+                            py + (self.layout.height - child.layout.height) // 2
+                        )
+                child.layout.y += (
                     self.calculateProportion(self.layout.width, child.getStyle("top"))
-                    or y
+                    or 0
                 )
-                child.layout.x = (
+                child.layout.x += (
                     self.calculateProportion(self.layout.width, child.getStyle("left"))
-                    or x
+                    or 0
                 )
                 child.calculateLayoutPosition()
             else:
                 child.layout.y = y
                 child.layout.x = x
 
-                align = child.getStyle("align-self", def_align)
                 if dir_row:
                     if align == "start":
                         child.layout.y = y
