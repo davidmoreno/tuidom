@@ -27,7 +27,7 @@ class Document(HandleEventTrait, Component):
     currentFocusedElement = None
     # current open element normally a select. Click outside and it is closed. And only one at a time.
     currentOpenElement = None
-    name = "body"
+    name = "document"
     stylesheet: css.StyleSheet
     stopLoop: None | EventExit = None
     cache = {}
@@ -54,6 +54,9 @@ class Document(HandleEventTrait, Component):
         renderer.document = self
 
         self.materialize()
+
+    def isFocusable(self):
+        return False
 
     def nextFocus(self):
         prev = self.currentFocusedElement

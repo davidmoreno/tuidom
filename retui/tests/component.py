@@ -101,10 +101,11 @@ class ComponentTestCase(TestCase):
                 ]
 
         app = App()
+        app.renderer.width = 80
+        app.renderer.height = 32
         app.materialize()
         app.prettyPrint()
-        app.calculateLayoutSizes(80, 32, 80, 32)
-        app.calculateLayoutPosition()
+        app.calculateLayout()
 
         printLayout(app)
 
@@ -178,14 +179,14 @@ class ComponentTestCase(TestCase):
         # check get proper style by priority
 
         # not :focus
-        self.assertEqual(inpt.getStyle("background"), "text-secondary")
+        self.assertEqual(inpt.getStyle("background"), "white")
 
         # :focus
         app.currentFocusedElement = inpt
         inpt2 = app.queryElement("input:focus")
         self.assertEqual(inpt, inpt2)
 
-        self.assertEqual(inpt.getStyle("background"), "bg-secondary")
+        self.assertEqual(inpt.getStyle("background"), "blue")
 
         app.currentFocusedElement = inpt
         order_of_pri = [

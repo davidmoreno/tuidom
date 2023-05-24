@@ -55,9 +55,21 @@ class WidgetsTestCase(TestCase):
         # click outside, lost focus
 
         # then tabs and arrows
+        app.setFocus(None)
+        self.assertFalse(app.queryElement("select:focus"))
+        self.assertFalse(app.queryElement("option:focus"))
+
         app.on_event(EventKeyPress("TAB"))
+        logger.debug("Current focus on: %s", app.currentFocusedElement)
+        self.assertTrue(app.queryElement("select:focus"))
+        self.assertFalse(app.queryElement("option:focus"))
+
         app.on_event(EventKeyPress("TAB"))
+        self.assertTrue(app.queryElement("select:focus"))
+        self.assertTrue(app.queryElement("option"))
+
         app.on_event(EventKeyPress("ENTER"))
+
         app.materialize()
         print(app.prettyPrint())
         self.assertEqual(app.queryElement("select").children[0].name, "div")

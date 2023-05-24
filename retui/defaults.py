@@ -23,6 +23,7 @@ DEFAULT_CSS = {
         "background": "bg",
         "color": "fg",
         "flex-direction": "column",
+        "flex-grow": 1,
     },
     "div": {
         "flex-direction": "column",
@@ -41,12 +42,6 @@ DEFAULT_CSS = {
         "color": "text-secondary",
         "background": "bg-secondary",
         "width": "100%",
-    },
-    "body": {
-        "flex-direction": "column",
-        "color": "text-primary",
-        "background": "bg-primary",
-        "flex-grow": 1,
     },
     "footer": {
         "flex-direction": "row",
