@@ -1,5 +1,6 @@
 import os
 import shutil
+import signal
 import sys
 import termios
 import tty
@@ -26,14 +27,17 @@ class XtermRenderer(Renderer):
         self.stdout = sys.stdout
         self.stdin = sys.stdin
 
-        width, height = shutil.get_terminal_size()
-        self.width = width
-        # TODO Fix last row can not be fill until the end or does a CR
-        self.height = height - 1
+        signal.signal(signal.SIGWINCH, lambda a, b: self.terminal_resize())
+        self.terminal_resize()
         super().__init__(**kwargs)
 
         self.captureKeyboard(True)
         self.pushScreen()
+
+    def terminal_resize(self):
+        width, height = shutil.get_terminal_size()
+        self.width = width
+        self.height = height - 1
 
     def captureKeyboard(self, is_on):
         if is_on:
