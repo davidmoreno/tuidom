@@ -190,9 +190,8 @@ class App(Document):
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    renderer = XtermRenderer()
     root = App()
-    root.loop(renderer)
+    root.loop()
 
 
 if __name__ == "__main__":

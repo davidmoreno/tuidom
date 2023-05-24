@@ -2,6 +2,7 @@ import logging
 
 from retui import css, defaults
 from retui.renderer import Renderer
+from retui.xtermrenderer import XtermRenderer
 
 from .events import (
     EventBlur,
@@ -15,6 +16,7 @@ from .events import (
 from .component import Component
 
 logger = logging.getLogger(__name__)
+default_renderer = XtermRenderer
 
 
 class Document(HandleEventTrait, Component):
@@ -30,7 +32,7 @@ class Document(HandleEventTrait, Component):
     stopLoop: None | EventExit = None
     cache = {}
 
-    def __init__(self, children=None, *, stylesheet=None, **props):
+    def __init__(self, renderer=None, children=None, *, stylesheet=None, **props):
         self.stylesheet = css.StyleSheet()
         self.stylesheet.addDict(defaults.DEFAULT_CSS)
         if children:
@@ -45,6 +47,12 @@ class Document(HandleEventTrait, Component):
             "on_keypress": self.on_keypress,
         }
         self.document = self
+
+        if not renderer:
+            renderer = default_renderer()
+        self.renderer = renderer
+        renderer.document = self
+
         self.materialize()
 
     def nextFocus(self):
@@ -139,8 +147,8 @@ class Document(HandleEventTrait, Component):
         _z, el = super().findElementAt(x, y)
         return el
 
-    def calculateLayout(self, width, height):
-        self.calculateLayoutSizes(0, 0, width, height)
+    def calculateLayout(self):
+        self.calculateLayoutSizes(0, 0, self.renderer.width, self.renderer.height)
         self.layout.y = 0
         self.layout.x = 0
         self.calculateLayoutPosition()
@@ -148,15 +156,15 @@ class Document(HandleEventTrait, Component):
         return self
 
     def paint(self, renderer: Renderer):
-        self.calculateLayout(renderer.width, renderer.height)
+        self.calculateLayout()
 
         renderer.setBackground(self.getStyle("background"))
         renderer.setForeground(self.getStyle("color"))
         renderer.fillRect(0, 0, renderer.width, renderer.height)
 
         super().paint(renderer)
-        assert len(renderer.translateStack) == 1
-        assert len(renderer.clippingStack) == 1
+        assert len(renderer.translateStack) == 0
+        assert len(renderer.clippingStack) == 0
 
         # super().paint(renderer)
         self.setCursor(renderer)
@@ -193,7 +201,8 @@ class Document(HandleEventTrait, Component):
             el.layout.y + cursor[1],
         )
 
-    def loop(self, renderer: Renderer):
+    def loop(self):
+        renderer = self.renderer
         self.stopLoop = None
         while not self.stopLoop:
             self.materialize()

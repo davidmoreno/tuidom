@@ -4,6 +4,7 @@ import logging
 import sys
 from typing import Generator
 
+
 from .events import Event, EventExit, EventKeyPress
 from . import defaults
 
@@ -67,10 +68,11 @@ class Renderer:
     translate = (0, 0)
     clipping = ((0, 0), (80, 25))
     zIndex = 0
-    translateStack = [(0, 0)]
-    clippingStack = [(80, 25)]
+    translateStack = []
+    clippingStack = []
     stdout = sys.stdout
     stdin = sys.stdin
+    document = None
 
     def __init__(self):
         """
@@ -79,7 +81,7 @@ class Renderer:
         TO IMPLEMENT BY REAL RENDERER
         """
         self.clipping = ((0, 0), (self.width, self.height))
-        self.clippingStack = [self.clipping]
+        self.clippingStack = []
 
         self.screen = [ScreenChar() for _ in range(0, self.width * self.height)]
         self.screen_back = [ScreenChar() for _ in range(0, self.width * self.height)]
@@ -99,21 +101,19 @@ class Renderer:
         pass
 
     def pushTranslate(self, trns):
-        self.translateStack.append(trns)
+        self.translateStack.append(self.translate)
         self.translate = trns
 
     def popTranslate(self):
-        self.translateStack.pop()
-        self.translate = self.translateStack[-1]
+        self.translate = self.translateStack.pop()
         return self.translate
 
     def pushClipping(self, clipping):
-        self.clippingStack.append(clipping)
+        self.clippingStack.append(self.clipping)
         self.clipping = clipping
 
     def popClipping(self):
-        self.clippingStack.pop()
-        self.clipping = self.clippingStack[-1]
+        self.clipping = self.clippingStack.pop()
         return self.clipping
 
     def addZIndex(self, z_index):
@@ -320,12 +320,27 @@ class Renderer:
                 "renderer": self,
             }
         )
+        self.redraw()
 
     def print(self, *str_or_list):
         """
         Indirect call just in case there are optimization oportunities
         """
         self.stdout.write(strlist_to_str(str_or_list))
+
+    def redraw(self):
+        """
+        Ask the document to redraw. Needed for terminal size changes.
+
+        This invalidates all double buffering.
+        """
+        if not self.document:
+            return
+        self.clipping = ((0, 0), (self.width, self.height))
+        self.screen = [ScreenChar() for _ in range(0, self.width * self.height)]
+        self.screen_back = [ScreenChar() for _ in range(0, self.width * self.height)]
+        self.document.calculateLayout()
+        self.document.paint(self)
 
 
 def strlist_to_str(strl):

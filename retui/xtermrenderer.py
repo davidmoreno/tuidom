@@ -27,17 +27,18 @@ class XtermRenderer(Renderer):
         self.stdout = sys.stdout
         self.stdin = sys.stdin
 
-        signal.signal(signal.SIGWINCH, lambda a, b: self.terminal_resize())
-        self.terminal_resize()
+        signal.signal(signal.SIGWINCH, lambda a, b: self.update_terminal_resize())
+        self.update_terminal_resize()
         super().__init__(**kwargs)
 
         self.captureKeyboard(True)
         self.pushScreen()
 
-    def terminal_resize(self):
+    def update_terminal_resize(self):
         width, height = shutil.get_terminal_size()
         self.width = width
         self.height = height - 1
+        self.redraw()
 
     def captureKeyboard(self, is_on):
         if is_on:
@@ -115,10 +116,7 @@ class XtermRenderer(Renderer):
                 pass
 
         if key == "CONTROL-L":
-            self.screen_back = [
-                ScreenChar() for _ in range(0, self.width * self.height)
-            ]
-            self.flush()
+            self.redraw()
 
         yield EventKeyPress(key)
 

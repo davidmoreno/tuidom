@@ -32,7 +32,7 @@ class WidgetsTestCase(TestCase):
 
         app = App()
         app.materialize()
-        app.calculateLayout(80, 25)
+        app.calculateLayout()
         print(app.prettyPrint())
         selectel = app.queryElement("select")
         self.assertEqual(selectel.children[0].name, "Text")
@@ -40,7 +40,7 @@ class WidgetsTestCase(TestCase):
         # first try with mouse
         app.on_event(EventMouseClick([1], (0, 0)))
         app.materialize()
-        app.calculateLayout(80, 25)
+        app.calculateLayout()
         printLayout(app)
         print(app.prettyPrint())
         self.assertIn(selectel, app.findElementAt(0, 0).parentTraversal())

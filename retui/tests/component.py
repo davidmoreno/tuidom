@@ -259,7 +259,7 @@ class ComponentTestCase(TestCase):
 
     def test_overflow(self):
         app = Document()[div(style={"width": 4})["Texto Largo"]]
-        app.materialize().calculateLayout(25, 80)
+        app.materialize().calculateLayout()
         app.prettyPrint()
 
         self.assertEqual(app.queryElement("Text").layout.width, 4)
