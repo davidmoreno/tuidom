@@ -475,7 +475,7 @@ class Component:
 
         # print(self, x, y)
         child: Component
-        def_align = self.getStyle("align-items") or "start"
+        def_align = self.getStyle("align-items")
         dir_row = self.getStyle("flex-direction") == "row"
         for child in self.children:
             align = child.getStyle("align-self", def_align)
@@ -485,6 +485,8 @@ class Component:
             if childposition == "absolute":
                 px = 0  # should get it from parent with relative
                 py = 0
+                from_top = False
+                from_left = False
                 if dir_row:
                     if align == "start":
                         child.layout.y = py
@@ -492,10 +494,14 @@ class Component:
                         child.layout.y = (
                             py + (self.layout.height - child.layout.height) // 2
                         )
+                    else:
+                        from_top = True
                     if justify == "center":
                         child.layout.x = (
                             py + (self.layout.height - child.layout.height) // 2
                         )
+                    else:
+                        from_left = True
                 else:
                     if align == "start":
                         child.layout.x = px
@@ -503,18 +509,28 @@ class Component:
                         child.layout.x = (
                             px + (self.layout.width - child.layout.width) // 2
                         )
+                    else:
+                        from_left = True
                     if justify == "center":
                         child.layout.y = (
                             py + (self.layout.height - child.layout.height) // 2
                         )
-                child.layout.y += (
-                    self.calculateProportion(self.layout.width, child.getStyle("top"))
-                    or 0
-                )
-                child.layout.x += (
-                    self.calculateProportion(self.layout.width, child.getStyle("left"))
-                    or 0
-                )
+                    else:
+                        from_top = True
+                if from_left:
+                    left = child.getStyle("left")
+                    child.layout.x = (
+                        self.calculateProportion(self.layout.width, left)
+                        if left is not None
+                        else x
+                    )
+                if from_top:
+                    top = child.getStyle("top")
+                    child.layout.y = (
+                        self.calculateProportion(self.layout.height, top)
+                        if top is not None
+                        else y
+                    )
                 child.calculateLayoutPosition()
             else:
                 child.layout.y = y
