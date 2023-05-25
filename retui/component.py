@@ -483,55 +483,7 @@ class Component:
             childposition = child.getStyle("position")
 
             if childposition == "absolute":
-                px = 0  # should get it from parent with relative
-                py = 0
-                from_top = False
-                from_left = False
-                if dir_row:
-                    if align == "start":
-                        child.layout.y = py
-                    elif align == "center":
-                        child.layout.y = (
-                            py + (self.layout.height - child.layout.height) // 2
-                        )
-                    else:
-                        from_top = True
-                    if justify == "center":
-                        child.layout.x = (
-                            py + (self.layout.height - child.layout.height) // 2
-                        )
-                    else:
-                        from_left = True
-                else:
-                    if align == "start":
-                        child.layout.x = px
-                    elif align == "center":
-                        child.layout.x = (
-                            px + (self.layout.width - child.layout.width) // 2
-                        )
-                    else:
-                        from_left = True
-                    if justify == "center":
-                        child.layout.y = (
-                            py + (self.layout.height - child.layout.height) // 2
-                        )
-                    else:
-                        from_top = True
-                if from_left:
-                    left = child.getStyle("left")
-                    child.layout.x = (
-                        self.calculateProportion(self.layout.width, left)
-                        if left is not None
-                        else x
-                    )
-                if from_top:
-                    top = child.getStyle("top")
-                    child.layout.y = (
-                        self.calculateProportion(self.layout.height, top)
-                        if top is not None
-                        else y
-                    )
-                child.calculateLayoutPosition()
+                child.layoutPosisitonAbsolute(x, y, dir_row, align, justify)
             else:
                 child.layout.y = y
                 child.layout.x = x
@@ -565,6 +517,50 @@ class Component:
                     x += child.layout.width
                 else:
                     y += child.layout.height
+
+    def layoutPosisitonAbsolute(self, x, y, dir_row, align, justify):
+        px = 0  # should get it from parent with relative
+        py = 0
+        from_top = False
+        from_left = False
+        parent = self.parent
+        if dir_row:
+            if align == "start":
+                self.layout.y = py
+            elif align == "center":
+                self.layout.y = py + (parent.layout.height - self.layout.height) // 2
+            else:
+                from_top = True
+            if justify == "center":
+                self.layout.x = py + (parent.layout.height - self.layout.height) // 2
+            else:
+                from_left = True
+        else:
+            if align == "start":
+                self.layout.x = px
+            elif align == "center":
+                self.layout.x = px + (parent.layout.width - self.layout.width) // 2
+            else:
+                from_left = True
+            if justify == "center":
+                self.layout.y = py + (parent.layout.height - self.layout.height) // 2
+            else:
+                from_top = True
+        if from_left:
+            left = self.getStyle("left")
+            self.layout.x = (
+                parent.calculateProportion(parent.layout.width, left)
+                if left is not None
+                else x
+            )
+        if from_top:
+            top = self.getStyle("top")
+            self.layout.y = (
+                parent.calculateProportion(parent.layout.height, top)
+                if top is not None
+                else y
+            )
+        self.calculateLayoutPosition()
 
     def prettyPrint(self, indent=0):
         def printable(v):
