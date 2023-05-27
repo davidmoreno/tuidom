@@ -2,7 +2,7 @@ import logging
 
 from retui import css, defaults
 from retui.renderer import Renderer
-from retui.xtermrenderer import XtermRenderer
+from retui.renderer.xtermrenderer import XtermRenderer
 
 from .events import (
     EventBlur,
@@ -147,14 +147,12 @@ class Document(HandleEventTrait, Component):
             return
 
     def findElementAt(self, x: int, y: int):
-        _z, el = super().findElementAt(x, y)
+        _z, el = self.layout.findElementAt(x, y)
         return el
 
     def calculateLayout(self):
-        self.calculateLayoutSizes(0, 0, self.renderer.width, self.renderer.height)
-        self.layout.y = 0
-        self.layout.x = 0
-        self.calculateLayoutPosition()
+        self.layout.calculateSize(0, 0, self.renderer.width, self.renderer.height)
+        self.layout.calculatePosition()
 
         return self
 

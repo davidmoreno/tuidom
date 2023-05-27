@@ -171,12 +171,12 @@ class input(Paintable):
 
         return (posx, posy)
 
-    def calculateLayoutSizes(self, min_width, min_height, max_width, max_height):
+    def calculateLayoutSize(self, min_width, min_height, max_width, max_height):
         rows = self.props.get("rows", len(self.getValue().split("\n")))
         maxRows = self.maxRows()
         rows = min(rows, maxRows)
 
-        return super().calculateLayoutSizes(
+        return super().calculateLayoutSize(
             min_width, max(min_height, rows), max_width, min(max_height, maxRows)
         )
 

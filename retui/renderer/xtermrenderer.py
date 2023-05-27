@@ -14,7 +14,7 @@ from retui.events import (
     EventMouseDown,
     EventMouseUp,
 )
-from .renderer import Renderer, ScreenChar
+from retui.renderer import Renderer, ScreenChar
 from retui import defaults
 
 

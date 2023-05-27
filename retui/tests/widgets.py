@@ -3,7 +3,6 @@ from unittest import TestCase
 from retui.component import Component, Text
 from retui.document import Document
 from retui.events import EventChange, EventMouseClick, EventKeyPress
-from retui.tests.utils import printLayout
 from retui.widgets import div, select, option, textarea
 
 logger = logging.getLogger(__name__)
@@ -41,7 +40,7 @@ class WidgetsTestCase(TestCase):
         app.on_event(EventMouseClick([1], (0, 0)))
         app.materialize()
         app.calculateLayout()
-        printLayout(app)
+        app.layout.prettyPrint()
         print(app.prettyPrint())
         self.assertIn(selectel, app.findElementAt(0, 0).parentTraversal())
 
@@ -103,5 +102,5 @@ class WidgetsTestCase(TestCase):
 
         inpt = textarea(defaultValue="Hello\nworld!", rows=4, maxRows=10)
         inpt.document = Document()
-        width, height = inpt.calculateLayoutSizes(0, 0, 100, 100)
+        width, height = inpt.calculateLayoutSize(0, 0, 100, 100)
         self.assertEqual(height, 4)

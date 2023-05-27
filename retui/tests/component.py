@@ -3,7 +3,6 @@ from unittest import TestCase
 from retui.component import Component, Text
 from retui.css import Selector
 from retui.document import Document
-from retui.tests.utils import printLayout
 from retui.widgets import div, span, input
 
 logger = logging.getLogger(__name__)
@@ -107,7 +106,7 @@ class ComponentTestCase(TestCase):
         app.prettyPrint()
         app.calculateLayout()
 
-        printLayout(app)
+        app.layout.prettyPrint()
 
         el = app.queryElement("#b1")
         self.assertEqual(el.layout.x, 0)

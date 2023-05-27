@@ -50,7 +50,7 @@ class EventsTestCase(TestCase):
         app = App()
         app.materialize()
         app.prettyPrint()
-        app.calculateLayoutSizes(0, 0, 80, 24)
+        app.calculateLayoutSize(0, 0, 80, 24)
         app.calculateLayoutPosition()
         for el in app.preorderTraversal():
             logger.debug("el: %s, layout: %s", el, el.layout)

@@ -5,8 +5,8 @@ import sys
 from typing import Generator
 
 
-from .events import Event, EventExit, EventKeyPress
-from . import defaults
+from retui.events import Event, EventExit, EventKeyPress
+from retui import defaults
 
 logger = logging.getLogger(__name__)
 
