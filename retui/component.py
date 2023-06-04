@@ -47,6 +47,9 @@ class Component:
         super().__init__()
 
     def __getitem__(self, children: list):
+        """
+        This is a trick to set the children as el(...)[children1, children2...]
+        """
         self.props["children"] = children
         return self
 
@@ -201,8 +204,7 @@ class Component:
         return False
 
     def updateProps(self, other):
-        # logger.debug("%s Update props: %s from %s",
-        #              self, self.props, other.props)
+        # logger.debug("%s Update props: %s from %s", self, self.props, other.props)
         deleted_props = set(self.props.keys()) - set(other.props.keys())
         for key in deleted_props:
             del self.props[key]
@@ -262,16 +264,14 @@ class Component:
             return style.getStyle(csskey, default)
         if csskey in style:
             return style[csskey]
-        value = self.document.stylesheet.getStyle(self, csskey)
+        value = self.document and self.document.stylesheet.getStyle(self, csskey)
         if value:
             return value
-        if csskey in css.INHERITABLE_STYLES and self.parent:
+        if self.parent and csskey in css.INHERITABLE_STYLES:
             return self.parent.getStyle(csskey, default)
         return default
 
-    def calculateLayoutSize(
-        self, min_width, min_height, max_width, max_height, clip=True
-    ):
+    def calculateLayoutSize(self, min_width, min_height, max_width, max_height):
         """
         TODO Maybe this should not be the name for all layouting (maybe just lauout())
         AND would need to update when children chane, maybe with some dirty markings
@@ -371,9 +371,6 @@ class Paintable(HandleEventTrait, Component):
 class Text(Paintable):
     def __init__(self, text, **props):
         super().__init__(text=text, **props)
-
-    def getStyle(self, csskey: css.StyleProperty, default=None):
-        return self.parent and self.parent.getStyle(csskey, default)
 
     def paint(self, renderer: Renderer):
         text = self.props.get("text")
