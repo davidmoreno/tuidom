@@ -4,6 +4,7 @@ from .layout import Layout
 from .text import LayoutText
 from .flex_column import LayoutFlexColumn
 from .flex_row import LayoutFlexRow
+from .block import LayoutBlock
 
 logger = logging.getLogger(__name__)
 
@@ -31,4 +32,5 @@ def create_layout(component: "retui.component.Component", display: str | None = 
             else:
                 return LayoutFlexRow(component)
 
-    return Layout(component)
+    # default layout is block
+    return LayoutBlock(component)

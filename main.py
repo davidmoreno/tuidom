@@ -5,7 +5,7 @@ import os
 import pathlib
 import sys
 
-from retui import Component, Document, XtermRenderer
+from retui import Component, Document
 from retui.component import Scrollable
 from retui.events import EventMouseClick, EventExit, EventKeyPress
 from retui.widgets import (
