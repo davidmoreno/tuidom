@@ -45,6 +45,7 @@ class Document(HandleEventTrait, Component):
         super().__init__(**props)
         self.props = {
             "on_keypress": self.on_keypress,
+            **(self.props or {}),
         }
         self.document = self
 
