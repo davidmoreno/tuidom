@@ -7,15 +7,15 @@ class LayoutBlock(Layout):
         max_x = x + self.width
         min_x = x
         for child in self.children:
-            print(
-                child,
-                min_x,
-                x,
-                y,
-                x + child.width,
-                max_x,
-                y + child.height,
-            )
+            # print(
+            #     child,
+            #     min_x,
+            #     x,
+            #     y,
+            #     x + child.width,
+            #     max_x,
+            #     y + child.height,
+            # )
             # first element each row can overflow, so just take it
             if x == min_x:
                 child.x = min_x
@@ -51,9 +51,9 @@ class LayoutBlock(Layout):
             line_height = max(line_height, child.height)
             mwidth = max(mwidth, width)
 
-            print(
-                f"Get size: {child}, {width} / {mwidth} / {max_width} {height} / {line_height} / {max_height}"
-            )
+            # print(
+            #     f"Get size: {child}, {width} / {mwidth} / {max_width} {height} / {line_height} / {max_height}"
+            # )
 
             if width > max_width:
                 height += line_height

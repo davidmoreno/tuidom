@@ -5,6 +5,7 @@ from .text import LayoutText
 from .flex_column import LayoutFlexColumn
 from .flex_row import LayoutFlexRow
 from .block import LayoutBlock
+from .absolute import LayoutAbsolute
 
 logger = logging.getLogger(__name__)
 
@@ -18,19 +19,30 @@ def create_layout(component: "retui.component.Component", display: str | None = 
     The forced one is used at scrollables, to force  inner layout to be
     block layout
     """
-    if not display:
-        display = component.getStyle("display")
 
     if component.name == "Text":
         return LayoutText(component)
 
+    if not display:
+        display = component.getStyle("display")
+
+    layout = None
     match display:
         case "flex":
             direction = component.getStyle("flex-direction", "column")
             if direction == "column":
-                return LayoutFlexColumn(component)
+                layout = LayoutFlexColumn(component)
             else:
-                return LayoutFlexRow(component)
+                layout = LayoutFlexRow(component)
 
     # default layout is block
-    return LayoutBlock(component)
+    if not layout:
+        layout = LayoutBlock(component)
+
+    position = component.getStyle("position")
+    match position:
+        case "absolute":
+            # position absolute makes a nested layout
+            layout = LayoutAbsolute(component, layout)
+
+    return layout

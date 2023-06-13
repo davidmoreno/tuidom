@@ -94,3 +94,38 @@ class LayoutTestCase(TestCase):
         self.assertEqual(t3.layout.y, 2)
         self.assertEqual(t3.layout.width, 80)
         self.assertEqual(t3.layout.height, 1)
+
+    def test_absolute(self):
+        app = Document(id="doc", style={"display": "flex", "flex-direction": "column"})[
+            div(id="m1", style={"flex-grow": 0})["Top"],
+            div(id="m2", style={"flex-grow": 1})["Middle"],
+            div(id="m3", style={"flex-grow": 0})["Bottom"],
+            div(
+                id="abs",
+                style={
+                    "position": "absolute",
+                    "z-index": 1,
+                    "align-items": "center",
+                    "justify-items": "center",
+                    "width": 40,
+                    "height": 20,
+                },
+            )[div(id="inside")["Inside"]],
+        ]
+        app.materialize()
+        app.calculateLayout()
+        app.layout.prettyPrint()
+
+        self.assertEqual(app.layout.width, 80)
+        self.assertEqual(app.layout.height, 25)
+
+        self.assertEqual(app.queryElement("#m1").layout.height, 1)
+        self.assertEqual(app.queryElement("#m2").layout.height, 23)
+        self.assertEqual(app.queryElement("#m3").layout.height, 1)
+
+        self.assertEqual(app.queryElement("#abs").layout.height, 20)
+        self.assertEqual(app.queryElement("#abs").layout.width, 40)
+        self.assertEqual(app.queryElement("#abs").layout.x, 3)
+        self.assertEqual(app.queryElement("#abs").layout.y, 20)
+
+        self.assertEqual(app.queryElement("#inside").layout.height, 1)

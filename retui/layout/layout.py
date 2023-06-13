@@ -99,7 +99,9 @@ class Layout:
         """
         raise NotImplementedError(f"TO IMPLEMENT ({self.__class__.__name__})")
 
-    def calculateSize(self, min_width, min_height, max_width, max_height):
+    def calculateSize(
+        self, min_width: int, min_height: int, max_width: int, max_height: int
+    ):
         """
         Calculates the layout inside the desired rectangle.
 
@@ -114,7 +116,7 @@ class Layout:
         max_width = getStyle("max-width") or max_width
         max_height = getStyle("max-height") or max_height
 
-        print(f"{min_width} {max_width}")
+        # print(f"{min_width} {max_width}")
 
         width = self.calculateProportion(max_width, getStyle("width"))
         if width:  # if there is a desired width, it is used
@@ -149,9 +151,8 @@ class Layout:
             + (getStyle("border", 0) and 2)
         )
 
-        # if clip:
-        #     width = min(max_width, max(width, min_width))
-        #     height = min(max_height, max(height, min_height))
+        width = min(max_width, max(width, min_width))
+        height = min(max_height, max(height, min_height))
 
         self.width = width
         self.height = height
